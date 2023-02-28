@@ -1,0 +1,5 @@
+option batch abort
+option confirm off
+open sftp://sc_pmr_outbound:6xvfbAwq@146.203.150.138/ -hostkey="ssh-rsa 1024 MKA9n3CYF8dY+j9P713bUoWelyJtFdv8gNpfn8pkzoc"
+synchronize local "J:\deans\Presidents\SixSigma\MSHS Productivity\Productivity\Universal Data\Labor\Raw Data\MSHQ_sftp_sync" /MSH/
+exit
