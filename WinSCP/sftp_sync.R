@@ -1,2 +1,0 @@
-setwd("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP")
-shell.exec("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP\\sync_to_network.bat")
