@@ -4,8 +4,8 @@ output: html_document
 ---
 
 ```{r sync, include=TRUE}
-setwd("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP")
-shell.exec("J:\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP\\sync_to_network.bat")
+setwd("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP")
+shell.exec("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP\\sync_to_network.bat")
 
 ```
 
