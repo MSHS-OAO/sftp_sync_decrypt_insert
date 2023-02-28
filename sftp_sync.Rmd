@@ -6,6 +6,5 @@ output: html_document
 ```{r sync, include=TRUE}
 setwd("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP")
 shell.exec("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP\\sync_to_network.bat")
-
 ```
 
