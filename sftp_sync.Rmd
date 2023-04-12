@@ -1,10 +1,9 @@
 ---
-title: "sftp_sync"
+title: "SFTP Sync"
 output: html_document
+date: "`r Sys.time()`"
 ---
 
-```{r sync, include=TRUE}
-setwd("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP")
-shell.exec("\\SharedDrive\\deans\\Presidents\\SixSigma\\MSHS Productivity\\Productivity\\Universal Data\\Labor\\Raw Data\\WinSCP\\sync_to_network.bat")
+```{r}
+system('lftp -f sync_to_network.lftp')
 ```
-
