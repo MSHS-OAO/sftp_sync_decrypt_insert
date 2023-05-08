@@ -4,6 +4,54 @@ output: html_document
 date: "`r Sys.time()`"
 ---
 
-```{r}
+```{r sftp_sync, include=TRUE}
 system('lftp -f sync_to_network.lftp')
+```
+
+```{r mshq_decrypt, include=TRUE}
+library(dplyr)
+library(glue)
+
+# set MSHQ SFTP directory
+sftp_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/Labor/Raw Data/MSHQ_sftp_sync/"
+
+# list files in the raw and decryption directories
+raw_files <- list.files(paste0(sftp_dir, "Raw/")) 
+decrypt_files <- list.files(paste0(sftp_dir, "Decrypt/"))
+
+# decrypt each file in raw folder and not in the decrypted folder
+for (i in 1:length(raw_files)) {
+  if (gsub(".out", "", raw_files[i]) %in% decrypt_files) {
+    message(paste(raw_files[i]), " has already been decrpyted")
+  } else {
+    encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
+    decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
+    
+    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file password.txt --batch '{encrypted}'"))
+  }
+}
+```
+
+```{r bislr_decrypt, include=TRUE}
+library(dplyr)
+library(glue)
+
+# set MSHQ SFTP directory
+sftp_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/Labor/Raw Data/BISLR_sftp_sync/"
+
+# list files in the raw and decryption directories
+raw_files <- list.files(paste0(sftp_dir, "Raw/")) 
+decrypt_files <- list.files(paste0(sftp_dir, "Decrypt/"))
+
+# decrypt each file in raw folder and not in the decrypted folder
+for (i in 1:length(raw_files)) {
+  if (gsub(".out", "", raw_files[i]) %in% decrypt_files) {
+    message(paste(raw_files[i]), " has already been decrpyted")
+  } else {
+    encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
+    decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
+    
+    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file password.txt --batch '{encrypted}'"))
+  }
+}
 ```
