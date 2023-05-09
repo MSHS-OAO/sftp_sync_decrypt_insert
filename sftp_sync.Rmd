@@ -5,7 +5,7 @@ date: "`r Sys.time()`"
 ---
 
 ```{r import_key, include=TRUE}
-system('gpg --import /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc')
+system('cat /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc | gpg --import --no-tty --batch --yes')
 print("import_key successful")
 ```
 
