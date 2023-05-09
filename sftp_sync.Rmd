@@ -1,23 +1,44 @@
 ---
-title: "SFTP Sync"
+title: "sftp_sync_decrypt"
 output: html_document
 date: "`r Sys.time()`"
 ---
 
-```{r import_key, include=TRUE}
+```{r libraries, include=F}
+library(dplyr)
+library(glue)
+```
+
+```{r import_key, echo=FALSE}
 system('cat /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc | gpg --import --no-tty --batch --yes')
 print("import_key successful")
 ```
 
-```{r sftp_sync, include=TRUE}
+```{r sftp_sync, echo=FALSE}
+# set MSHQ SFTP directory
+sftp_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/Labor/Raw Data/MSHQ_sftp_sync/"
+
+# get files currently in network directory
+raw_files <- list.files(paste0(sftp_dir, "Raw/"))
+
+# run lftp file to sync sftp to network drive
 system('lftp -f /data/SFTP/sync_to_network.lftp')
+
+# get new files in network drive
+raw_files_new <- list.files(paste0(sftp_dir, "Raw/"))
+
+#print new files that were copied over in sync
+new_files <- setdiff(raw_files_new, raw_files)
+if (length(new_files) > 0) {
+  print(paste(new_files, "has been added to the network drive"))
+} else {
+  print("Network drive is already up to date")
+}
+
 print("sftp_sync successful")
 ```
 
-```{r mshq_decrypt, include=TRUE}
-library(dplyr)
-library(glue)
-
+```{r mshq_decrypt, echo=FALSE}
 # set MSHQ SFTP directory
 sftp_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/Labor/Raw Data/MSHQ_sftp_sync/"
 
@@ -27,22 +48,29 @@ decrypt_files <- list.files(paste0(sftp_dir, "Decrypt/"))
 
 # decrypt each file in raw folder and not in the decrypted folder
 for (i in 1:length(raw_files)) {
-  if (gsub(".out", "", raw_files[i]) %in% decrypt_files) {
-    message(paste(raw_files[i]), " has already been decrpyted")
-  } else {
+  if (!(gsub(".out", "", raw_files[i]) %in% decrypt_files)) {
     encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
     decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
     
     system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
-  }
+  } 
 }
+
+# get new files in network drive
+decrypt_files_new <- list.files(paste0(sftp_dir, "Decrypt/"))
+
+# print new files that were decrypted
+new_files <- setdiff(decrypt_files_new, decrypt_files)
+if (length(new_files) > 0) {
+  print(paste(new_files, "has been decrypted"))
+} else {
+  print("No new MSHQ files to decrypt")
+}
+
 print("mshq_decrypt successful")
 ```
 
-```{r bislr_decrypt, include=TRUE}
-library(dplyr)
-library(glue)
-
+```{r bislr_decrypt, echo=FALSE}
 # set MSHQ SFTP directory
 sftp_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/Labor/Raw Data/BISLR_sftp_sync/"
 
@@ -52,14 +80,24 @@ decrypt_files <- list.files(paste0(sftp_dir, "Decrypt/"))
 
 # decrypt each file in raw folder and not in the decrypted folder
 for (i in 1:length(raw_files)) {
-  if (gsub(".out", "", raw_files[i]) %in% decrypt_files) {
-    message(paste(raw_files[i]), " has already been decrpyted")
-  } else {
+  if (!(gsub(".out", "", raw_files[i]) %in% decrypt_files)) {
     encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
     decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
     
     system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
-  }
+  } 
 }
+
+# get new files in network drive
+decrypt_files_new <- list.files(paste0(sftp_dir, "Decrypt/"))
+
+# print new files that were decrypted
+new_files <- setdiff(decrypt_files_new, decrypt_files)
+if (length(new_files) > 0) {
+  print(paste(new_files, "has been decrypted"))
+} else {
+  print("No new BISLR files to decrypt")
+}
+
 print("bislr_decrypt successful")
 ```
