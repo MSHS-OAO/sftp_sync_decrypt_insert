@@ -4,8 +4,14 @@ output: html_document
 date: "`r Sys.time()`"
 ---
 
+```{r import_key, include=TRUE}
+system('gpg --import /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc')
+print("import_key successful")
+```
+
 ```{r sftp_sync, include=TRUE}
-system('lftp -f sync_to_network.lftp')
+system('lftp -f /data/SFTP/sync_to_network.lftp')
+print("sftp_sync successful")
 ```
 
 ```{r mshq_decrypt, include=TRUE}
@@ -27,9 +33,10 @@ for (i in 1:length(raw_files)) {
     encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
     decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
     
-    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file password.txt --batch '{encrypted}'"))
+    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
   }
 }
+print("mshq_decrypt successful")
 ```
 
 ```{r bislr_decrypt, include=TRUE}
@@ -51,7 +58,8 @@ for (i in 1:length(raw_files)) {
     encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
     decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
     
-    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file password.txt --batch '{encrypted}'"))
+    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
   }
 }
+print("bislr_decrypt successful")
 ```
