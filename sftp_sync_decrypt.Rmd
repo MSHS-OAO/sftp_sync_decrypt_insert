@@ -39,7 +39,7 @@ bislr_raw_files_new <- list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_s
 new_files <- setdiff(c(mshq_raw_files_new, bislr_raw_files_new),
                      c(mshq_raw_files, bislr_raw_files))
 if (length(new_files) > 0) {
-  cat(cat(paste0(new_files, "\n")), "has been added to the network drive", fill = TRUE)
+  cat(cat(paste0(new_files, "\n")), "have been added to the network drive", fill = TRUE)
 } else {
   print("Network drive is already up to date")
 }
@@ -65,7 +65,6 @@ bislr_dates <- bislr_raw_files_info %>%
   select(RAW, DECRYPT, INSERT, RAW_MTIME, START_DATE, END_DATE) %>%
   arrange(RAW_MTIME)
 write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
-
 
 print("sftp_sync successful")
 ```
@@ -130,8 +129,8 @@ decrypt_files <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_syn
 # decrypt each file in raw folder and not in the decrypted folder
 for (i in 1:length(raw_files)) {
   if (!(gsub(".out", "", raw_files[i]) %in% decrypt_files)) {
-    encrypted <- paste0(sftp_dir, "Raw/", raw_files[i])
-    decrypted <- paste0(sftp_dir, "Decrypt/", gsub(".out", "", raw_files[i]))
+    encrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Raw/", raw_files[i])
+    decrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", gsub(".out", "", raw_files[i]))
     
     system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
   } 
@@ -251,4 +250,100 @@ if (nrow(mshq_dates_new) > 0) {
 }
 
 print("mshq_insert successful")
+```
+
+```{r bislr_insert, echo=FALSE}
+# set universal data directory
+universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
+
+# col names for Oracle DB
+db_columns <- c("PARTNER", "HOME_FACILITY", "HOME_DEPARTMENT", "WORKED_FACILITY", 
+                "WORKED_DEPARTMENT", "START_DATE", "END_DATE", "EMPLOYEE_ID",
+                "EMPLOYEE_NAME", "APPROVED_HOURS", "POSITION_CODE", "JOBCODE",
+                "PAYCODE", "WD_HOURS", "WD_EXPENSE", "HOME_DEPARTMENT_NAME",
+                "WORKED_DEPARTMENT_NAME", "POSITION_CODE_DESCRIPTION",
+                "LOCATION_DESCRIPTION", "WD_COFT", "WD_ACCOUNT", "WD_LOCATION",
+                "WD_DEPARTMENT", "WD_FUND_NUMBER", "HD_COFT", "HD_LOCATION",
+                "HD_DEPARTMENT", "WD_COA", "HD_COA", "PAYROLL_NAME",
+                "REVERSE_MAP_WORKED", "REVERSE_MAP_HOME", "FILE_NAME")
+
+# read in bislr dates file 
+bislr_dates <- read_excel(paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx")) %>%
+  mutate(INSERT = case_when(
+    START_DATE == "IGNORE" ~ "IGNORE",
+    is.na(START_DATE) ~ NA,
+    TRUE ~ INSERT))
+
+# get list of files that need dates/Ignore
+bislr_dates_new <- bislr_dates %>%
+  filter(is.na(START_DATE))
+
+# get list of files in insert folder currently
+insert_files <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/")) 
+
+# update mshq dates for files with newly added START_DATE and END_DATE values
+bislr_dates <- bislr_dates %>% 
+  arrange(START_DATE) %>% 
+  mutate(INSERT = case_when(
+    is.na(INSERT) & !is.na(START_DATE) & START_DATE != "IGNORE" ~ paste0(row.names(.), "_", DECRYPT),
+    TRUE ~ INSERT)) %>%
+  arrange(RAW_MTIME)
+
+# get list of files that now have date values but dont have an insert file
+new_inserts <- setdiff(bislr_dates %>% 
+                         filter(!is.na(INSERT) & START_DATE != "IGNORE") %>% 
+                         select(INSERT) %>% 
+                         pull(),
+                       insert_files)
+# list of files that need an insert file created
+create_inserts <- bislr_dates %>%
+  filter(INSERT %in% new_inserts) %>%
+  select(DECRYPT) %>%
+  pull()
+
+# create a new insert file for all decrypted files that need insert files
+inserts <- lapply(create_inserts, function(x) {
+  data <-  read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", x),
+                    sep = "~", header = T, stringsAsFactors = F,
+                    colClasses = rep("character", 32), strip.white = TRUE) %>%
+    mutate(FILENAME = x) %>%
+    filter(as.Date(Start.Date, format = "%m/%d/%Y") >= 
+             as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                            select(START_DATE)), format = "%Y-%m-%d"),
+           as.Date(End.Date, format = "%m/%d/%Y") <= 
+             as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                            select(END_DATE)), format = "%Y-%m-%d"))
+})
+# apply column names of oracle db to all new insert files
+inserts <- lapply(inserts, setNames, db_columns)
+names(inserts) <- create_inserts
+
+lapply(names(inserts), function(x) {
+  write.table(inserts[[x]], paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/",
+                        bislr_dates %>% 
+                          filter(DECRYPT == x) %>%
+                          select(INSERT) %>%
+                          pull()),
+              sep = "~", row.names = FALSE)
+})
+
+# save updated mshq dates file
+write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
+
+# list new insert files if there are any
+if (length(new_inserts) > 0) {
+  cat(cat(paste0(new_inserts, "\n")), "has been added to the network drive", fill = TRUE)
+} else {
+  print("Insert files are already up to date")
+}
+
+# list files that need START_DATE and END_DATE values
+if (nrow(bislr_dates_new) > 0) {
+  print("The following files need START_DATE and END_DATE values in BISLR_File_Dates.xlsx")
+  bislr_dates_new
+} else {
+  print("BISLR_File_Dates.xlsx is up to date")
+}
+
+print("bislr_insert successful")
 ```
