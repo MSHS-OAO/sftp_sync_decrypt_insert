@@ -210,7 +210,10 @@ inserts <- lapply(create_inserts, function(x) {
   data <-  read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Decrypt/", x),
                     sep = "~", header = T, stringsAsFactors = F,
                     colClasses = rep("character", 32), strip.white = TRUE) %>%
-    mutate(FILENAME = x) %>%
+    mutate(FILENAME = mshq_dates %>%
+             filter(DECRYPT == x) %>%
+             select(INSERT) %>%
+             pull()) %>%
     filter(as.Date(Start.Date, format = "%m/%d/%Y") >= 
              as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
                             select(START_DATE)), format = "%Y-%m-%d"),
@@ -236,7 +239,7 @@ write_xlsx(mshq_dates, paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
 
 # list new insert files if there are any
 if (length(new_inserts) > 0) {
-  cat(cat(paste0(new_inserts, "\n")), "has been added to the network drive", fill = TRUE)
+  cat(cat(paste0(new_inserts, "\n")), "has been added to the Insert folder", fill = TRUE)
 } else {
   print("Insert files are already up to date")
 }
@@ -306,7 +309,10 @@ inserts <- lapply(create_inserts, function(x) {
   data <-  read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", x),
                     sep = "~", header = T, stringsAsFactors = F,
                     colClasses = rep("character", 32), strip.white = TRUE) %>%
-    mutate(FILENAME = x) %>%
+    mutate(FILENAME = bislr_dates %>%
+             filter(DECRYPT == x) %>%
+             select(INSERT) %>%
+             pull()) %>%
     filter(as.Date(Start.Date, format = "%m/%d/%Y") >= 
              as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
                             select(START_DATE)), format = "%Y-%m-%d"),
@@ -332,7 +338,7 @@ write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 
 # list new insert files if there are any
 if (length(new_inserts) > 0) {
-  cat(cat(paste0(new_inserts, "\n")), "has been added to the network drive", fill = TRUE)
+  cat(cat(paste0(new_inserts, "\n")), "has been added to the Insert folder", fill = TRUE)
 } else {
   print("Insert files are already up to date")
 }
