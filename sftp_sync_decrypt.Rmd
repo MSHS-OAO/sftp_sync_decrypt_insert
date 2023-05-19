@@ -1,21 +1,26 @@
 ---
-title: "sftp_sync_decrypt"
+title: "SFTP_Sync_Decrypt_Insert"
 output: html_document
 date: "`r Sys.time()`"
 ---
+
+```{css, echo = FALSE}
+caption {
+      color: red;
+      font-weight: bold
+      font-size: 13;
+    }
+```
 
 ```{r libraries, include=F}
 library(dplyr)
 library(glue)
 library(readxl)
 library(writexl)
+library(kableExtra)
 ```
 
-```{r import_key, echo=FALSE}
-system('cat /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc | gpg --import --no-tty --batch --yes')
-print("import_key successful")
-```
-
+# SFTP Synchronization
 ```{r sftp_sync, echo=FALSE}
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
@@ -69,30 +74,37 @@ write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 print("sftp_sync successful")
 ```
 
+# Decryption
+#### Import Decryption Key
+```{r import_key, echo=FALSE}
+system('cat /data/SFTP/MSH_ALLINTERNAL_OB_PRIVATE.asc | gpg --import --no-tty --batch --yes')
+print("import_key successful")
+```
+
+#### MSHQ Decryption
 ```{r mshq_decrypt, echo=FALSE}
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
-# get current MSHQ and BISLR file and date mapping file
+# get current MSHQ and file and date mapping file
 mshq_dates <- read_excel(paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
 
 # list files in the raw and decryption directories
-raw_files <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Raw/")) 
 decrypt_files <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Decrypt/"))
 
+# list files that need to be decrypted
+files_to_decrypt <- mshq_dates %>%
+  filter(!(gsub(".out", "", RAW) %in% decrypt_files)) %>%
+  select(RAW) %>%
+  pull()
+  
 # decrypt each file in raw folder and not in the decrypted folder
-for (i in 1:length(raw_files)) {
-  if (!(gsub(".out", "", raw_files[i]) %in% decrypt_files)) {
-    encrypted <- paste0(universal_dir, 
-                        "/Labor/Raw Data/MSHQ_sftp_sync/Raw/", 
-                        raw_files[i])
-    decrypted <- paste0(universal_dir, 
-                        "/Labor/Raw Data/MSHQ_sftp_sync/Decrypt/", 
-                        gsub(".out", "", raw_files[i]))
-    
-    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
-  } 
-}
+decrypt_function <- lapply(files_to_decrypt, function(x) {
+  encrypted <- paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Raw/", x)
+  decrypted <- paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Decrypt/", gsub(".out", "", x))
+  system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
+  }
+)
 
 # get new files in network drive
 decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Decrypt/"))
@@ -115,6 +127,7 @@ write_xlsx(mshq_dates, paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
 print("mshq_decrypt successful")
 ```
 
+#### BISLR Decryption
 ```{r bislr_decrypt, echo=FALSE}
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
@@ -123,18 +136,21 @@ universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Produ
 bislr_dates <- read_excel(paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 
 # list files in the raw and decryption directories
-raw_files <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Raw/")) 
 decrypt_files <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/"))
 
+# list files that need to be decrypted
+files_to_decrypt <- bislr_dates %>%
+  filter(!(gsub(".out", "", RAW) %in% decrypt_files)) %>%
+  select(RAW) %>%
+  pull()
+  
 # decrypt each file in raw folder and not in the decrypted folder
-for (i in 1:length(raw_files)) {
-  if (!(gsub(".out", "", raw_files[i]) %in% decrypt_files)) {
-    encrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Raw/", raw_files[i])
-    decrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", gsub(".out", "", raw_files[i]))
-    
-    system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
-  } 
-}
+decrypt_function <- lapply(files_to_decrypt, function(x) {
+  encrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Raw/", x)
+  decrypted <- paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", gsub(".out", "", x))
+  system(glue("gpg --output '{decrypted}' --decrypt --pinentry-mode loopback --passphrase-file /data/SFTP/password.txt --batch '{encrypted}'"))
+  }
+)
 
 # get new files in network drive
 decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/"))
@@ -157,6 +173,8 @@ write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 print("bislr_decrypt successful")
 ```
 
+# Insert Creation
+#### MSHQ Inserts
 ```{r mshq_insert, echo=FALSE}
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
@@ -222,15 +240,15 @@ inserts <- lapply(create_inserts, function(x) {
                             select(END_DATE)), format = "%Y-%m-%d"))
 })
 # apply column names of oracle db to all new insert files
-inserts <- lapply(inserts, setNames, db_columns)
+insert_function <- lapply(inserts, setNames, db_columns)
 names(inserts) <- create_inserts
 
-lapply(names(inserts), function(x) {
+insert_function <- lapply(names(inserts), function(x) {
   write.table(inserts[[x]], paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/",
-                        mshq_dates %>% 
-                          filter(DECRYPT == x) %>%
-                          select(INSERT) %>%
-                          pull()),
+                                   mshq_dates %>% 
+                                     filter(DECRYPT == x) %>%
+                                     select(INSERT) %>%
+                                     pull()),
               sep = "~", row.names = FALSE)
 })
 
@@ -246,8 +264,11 @@ if (length(new_inserts) > 0) {
 
 # list files that need START_DATE and END_DATE values
 if (nrow(mshq_dates_new) > 0) {
-  print("The following files need START_DATE and END_DATE values in MSHQ_File_Dates.xlsx")
-  mshq_dates_new
+  kable(mshq_dates_new, 
+        caption = "The following files need START_DATE and END_DATE values in MSHQ_File_Dates.xlsx:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
 } else {
   print("MSHQ_File_Dates.xlsx is up to date")
 }
@@ -255,6 +276,7 @@ if (nrow(mshq_dates_new) > 0) {
 print("mshq_insert successful")
 ```
 
+#### BISLR Inserts
 ```{r bislr_insert, echo=FALSE}
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
@@ -321,10 +343,10 @@ inserts <- lapply(create_inserts, function(x) {
                             select(END_DATE)), format = "%Y-%m-%d"))
 })
 # apply column names of oracle db to all new insert files
-inserts <- lapply(inserts, setNames, db_columns)
+insert_function <- lapply(inserts, setNames, db_columns)
 names(inserts) <- create_inserts
 
-lapply(names(inserts), function(x) {
+insert_function <- lapply(names(inserts), function(x) {
   write.table(inserts[[x]], paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/",
                         bislr_dates %>% 
                           filter(DECRYPT == x) %>%
@@ -345,8 +367,11 @@ if (length(new_inserts) > 0) {
 
 # list files that need START_DATE and END_DATE values
 if (nrow(bislr_dates_new) > 0) {
-  print("The following files need START_DATE and END_DATE values in BISLR_File_Dates.xlsx")
-  bislr_dates_new
+  kable(mshq_dates_new, 
+        caption = "The following files need START_DATE and END_DATE values in BISLR_File_Dates.xlsx:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
 } else {
   print("BISLR_File_Dates.xlsx is up to date")
 }
