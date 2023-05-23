@@ -232,15 +232,15 @@ inserts <- lapply(create_inserts, function(x) {
              filter(DECRYPT == x) %>%
              select(INSERT) %>%
              pull()) %>%
-    filter(as.Date(Start.Date, format = "%m/%d/%Y") >= 
-             as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
-                            select(START_DATE)), format = "%Y-%m-%d"),
-           as.Date(End.Date, format = "%m/%d/%Y") <= 
-             as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
-                            select(END_DATE)), format = "%Y-%m-%d"))
+    mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
+           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d")) %>%
+    filter(Start.Date >= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
+                                         select(START_DATE)), format = "%Y-%m-%d"),
+           End.Date <= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
+                                      select(END_DATE)), format = "%Y-%m-%d"))
 })
 # apply column names of oracle db to all new insert files
-insert_function <- lapply(inserts, setNames, db_columns)
+inserts <- lapply(inserts, setNames, db_columns)
 names(inserts) <- create_inserts
 
 insert_function <- lapply(names(inserts), function(x) {
@@ -335,15 +335,15 @@ inserts <- lapply(create_inserts, function(x) {
              filter(DECRYPT == x) %>%
              select(INSERT) %>%
              pull()) %>%
-    filter(as.Date(Start.Date, format = "%m/%d/%Y") >= 
-             as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
-                            select(START_DATE)), format = "%Y-%m-%d"),
-           as.Date(End.Date, format = "%m/%d/%Y") <= 
-             as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
-                            select(END_DATE)), format = "%Y-%m-%d"))
+    mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
+           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d")) %>%
+    filter(Start.Date >= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                                         select(START_DATE)), format = "%Y-%m-%d"),
+           End.Date <= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                                      select(END_DATE)), format = "%Y-%m-%d"))
 })
 # apply column names of oracle db to all new insert files
-insert_function <- lapply(inserts, setNames, db_columns)
+inserts <- lapply(inserts, setNames, db_columns)
 names(inserts) <- create_inserts
 
 insert_function <- lapply(names(inserts), function(x) {
@@ -367,7 +367,7 @@ if (length(new_inserts) > 0) {
 
 # list files that need START_DATE and END_DATE values
 if (nrow(bislr_dates_new) > 0) {
-  kable(mshq_dates_new, 
+  kable(bislr_dates_new, 
         caption = "The following files need START_DATE and END_DATE values in BISLR_File_Dates.xlsx:") %>% 
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
