@@ -233,7 +233,10 @@ inserts <- lapply(create_inserts, function(x) {
              select(INSERT) %>%
              pull()) %>%
     mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
-           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d")) %>%
+           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
+           Job.Code = case_when(
+             Job.Code == "" ~ "UNKNOWN",
+             TRUE ~ Job.Code)) %>%
     filter(Start.Date >= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
                                          select(START_DATE)), format = "%Y-%m-%d"),
            End.Date <= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
@@ -336,7 +339,10 @@ inserts <- lapply(create_inserts, function(x) {
              select(INSERT) %>%
              pull()) %>%
     mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
-           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d")) %>%
+           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
+           Job.Code = case_when(
+             Job.Code == "" ~ "UNKNOWN",
+             TRUE ~ Job.Code)) %>%
     filter(Start.Date >= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
                                          select(START_DATE)), format = "%Y-%m-%d"),
            End.Date <= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
