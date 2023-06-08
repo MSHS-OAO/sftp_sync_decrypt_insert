@@ -295,6 +295,9 @@ db_columns <- c("PARTNER", "HOME_FACILITY", "HOME_DEPARTMENT", "WORKED_FACILITY"
                 "HD_DEPARTMENT", "WD_COA", "HD_COA", "PAYROLL_NAME",
                 "REVERSE_MAP_WORKED", "REVERSE_MAP_HOME", "FILE_NAME")
 
+#Names of the weekly paycyle names in the payroll name column in data files
+weekly_pc <- c("WEST WEEKLY", "BIB WEEKLY")
+
 # read in bislr dates file 
 bislr_dates <- read_excel(paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx")) %>%
   mutate(INSERT = case_when(
@@ -329,6 +332,26 @@ create_inserts <- bislr_dates %>%
   select(DECRYPT) %>%
   pull()
 
+# create list of start and end dates for all insert files
+delete_weekly <- lapply(create_inserts, function(x) {
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", x),
+                    sep = "~", header = T, stringsAsFactors = F,
+                    colClasses = rep("character", 32), strip.white = TRUE) %>%
+     mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
+           End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d")) %>%
+    filter(Start.Date >= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                                         select(START_DATE)), format = "%Y-%m-%d"),
+           End.Date <= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
+                                      select(END_DATE)), format = "%Y-%m-%d")) %>%
+    arrange(Start.Date, End.Date) %>%
+    mutate(Start_End = paste0(Start.Date, "_", End.Date)) %>%
+    select(Start.Date, End.Date, Start_End) %>%
+    distinct() %>%
+    filter(Start.Date == max(Start.Date))
+})
+# assign create_inserts as the name for the delete weekly list elements
+names(delete_weekly) <- create_inserts
+
 # create a new insert file for all decrypted files that need insert files
 inserts <- lapply(create_inserts, function(x) {
   data <-  read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/", x),
@@ -346,7 +369,10 @@ inserts <- lapply(create_inserts, function(x) {
     filter(Start.Date >= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
                                          select(START_DATE)), format = "%Y-%m-%d"),
            End.Date <= as.Date(pull(filter(bislr_dates, DECRYPT == x) %>%
-                                      select(END_DATE)), format = "%Y-%m-%d"))
+                                      select(END_DATE)), format = "%Y-%m-%d")) %>%
+    mutate(Start_End = paste0(Start.Date, "_", End.Date)) %>%
+    filter(Start_End != delete_weekly[[x]][,"Start_End"]) %>%
+    select(-Start_End)
 })
 # apply column names of oracle db to all new insert files
 inserts <- lapply(inserts, setNames, db_columns)
