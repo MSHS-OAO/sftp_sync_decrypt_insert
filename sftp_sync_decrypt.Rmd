@@ -18,6 +18,8 @@ library(glue)
 library(readxl)
 library(writexl)
 library(kableExtra)
+library(odbc)
+library(DBI)
 ```
 
 # SFTP Synchronization
@@ -410,3 +412,77 @@ if (nrow(bislr_dates_new) > 0) {
 
 print("bislr_insert successful")
 ```
+
+# Quality Check
+#### Job Code Check
+```{r jobcode check, echo=FALSE}
+# set universal data directory
+universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
+
+# establish connection to OAO oracle cloud db
+con <- dbConnect(odbc(), "OracleODBC-21_5",
+                 uid = "lenang01",
+                 pwd = "A9xXY#fztK")
+
+# get set of unique files in MSHQ database
+mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE") %>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull
+
+# get set of unique files in BISLR database
+bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE") %>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull()
+
+# get new files in network drive
+mshq_inserts <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Insert/"))
+bislr_inserts <- list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Insert/"))
+
+# get set of files to check the mapping files with
+mshq_new <- setdiff(mshq_inserts, mshq_db_files)
+bislr_new <- setdiff(bislr_inserts, bislr_db_files)
+
+# get all jobcodes in mapping file within database
+jobcodes <- tbl(con, "MAPPING_JOBCODE") %>%
+  select(JOBCODE, PAYROLL) %>%
+  collect()
+
+# read all insert files that need jobcode check
+mshq_check <- lapply(mshq_new, function(x) {
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x),
+                    sep = "~", header = T, stringsAsFactors = F,
+                    colClasses = rep("character", 33), strip.white = TRUE)
+})
+mshq_check <- do.call("rbind", mshq_check)
+
+bislr_check <- lapply(bislr_new, function(x) {
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x),
+                    sep = "~", header = T, stringsAsFactors = F,
+                    colClasses = rep("character", 33), strip.white = TRUE)
+})
+bislr_check <- do.call("rbind", bislr_check)
+
+# check jobcodes in new insert files with jobcode mapping file
+if (mshq_check %>% select(JOBCODE) %in% 
+    (jobcodes %>% filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())) {
+  print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
+} else {
+  new_mshq_jobcodes <- mshq_check %>%
+    filter(!(JOBCODE %in% (jobcodes %>% 
+                             filter(PAYROLL == 'MSHQ') %>% 
+                             select(JOBCODE) %>% pull))) %>%
+    select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
+    distinct()
+}
+
+
+
+
+
+
+```
+
