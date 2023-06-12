@@ -4,7 +4,7 @@
   "platform": "4.2.3",
   "metadata": {
     "appmode": "rmd-static",
-    "primary_rmd": "sftp_sync_decrypt.Rmd",
+    "primary_rmd": "sftp_sync_decrypt_insert.Rmd",
     "primary_html": null,
     "content_category": null,
     "has_parameters": false
@@ -2183,8 +2183,11 @@
     "README.md": {
       "checksum": "6cf30d8ac73903e4aa8ccfe2c42c9796"
     },
-    "sftp_sync_decrypt.Rmd": {
-      "checksum": "a58a4253ceb7d4d128fa87f954f8d9f4"
+    "sftp_sync_decrypt_insert.Rmd": {
+      "checksum": "73a8eb6402fe79474765ceb9c787770d"
+    },
+    "sftp_sync_decrypt.html": {
+      "checksum": "b4862d4ddc253698e22f9cc4b04a72cd"
     },
     "sync_to_network.lftp": {
       "checksum": "49d6ec69f55f977797afe83127eb76e6"
