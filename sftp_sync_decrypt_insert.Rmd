@@ -467,22 +467,50 @@ bislr_check <- lapply(bislr_new, function(x) {
 bislr_check <- do.call("rbind", bislr_check)
 
 # check jobcodes in new insert files with jobcode mapping file
-if (mshq_check %>% select(JOBCODE) %in% 
-    (jobcodes %>% filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())) {
+if (length(setdiff((mshq_check %>% 
+                    select(JOBCODE) %>% pull()),
+                   (jobcodes %>% 
+                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
+    == 0) {
   print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
   new_mshq_jobcodes <- mshq_check %>%
     filter(!(JOBCODE %in% (jobcodes %>% 
                              filter(PAYROLL == 'MSHQ') %>% 
                              select(JOBCODE) %>% pull))) %>%
+    mutate(PAYROLL = "MSHQ") %>%
     select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
     distinct()
+  
+  kable(new_mshq_jobcodes, 
+        caption = "The following MSHQ jobcodes need to be added to MAPING_JOBCODE:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
 }
 
+if (length(setdiff((mshq_check %>% 
+                    select(JOBCODE) %>% pull()),
+                   (jobcodes %>% 
+                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
+    == 0) {
+  print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
+} else {
+  new_bislr_jobcodes <- bislr_check %>%
+    filter(!(JOBCODE %in% (jobcodes %>% 
+                             filter(PAYROLL == 'BISLR') %>% 
+                             select(JOBCODE) %>% pull))) %>%
+    mutate(PAYROLL = "BISLR") %>%
+    select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
+    distinct()
+  
+  kable(new_bislr_jobcodes, 
+        caption = "The following BISLR jobcodes need to be added to MAPING_JOBCODE:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
 
-
-
-
-
+print("Jobcode check successful")
 ```
 
