@@ -514,3 +514,198 @@ if (length(setdiff((mshq_check %>%
 print("Jobcode check successful")
 ```
 
+# Quality Check
+#### Pay Code Check
+```{r paycode check , echo=FALSE}
+
+# set universal data directory
+universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
+
+# establish connection to OAO oracle cloud db
+con <- dbConnect(odbc(), "OracleODBC-21_5",
+                 uid = "lenang01",
+                 pwd = "A9xXY#fztK")
+
+# Unique MSHQ files in database
+mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE")%>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull()
+  
+# Unique BISLR files in database
+bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE")%>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull()
+
+# get list of files in insert folder currently
+mshq_insert_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Insert/"))
+bislr_insert_files <- list.files(paste0(universal_dir, "/Labor//Raw Data/BISLR_sftp_sync/Insert/"))
+
+# Get new files
+mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
+bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
+
+# Read mapping pay code
+mapping_paycode <- tbl(con, "MAPPING_PAYCODE") %>%
+                   select(PAYCODE_RAW) %>%
+                   distinct() %>%
+                   collect() %>%
+                   pull()
+
+# Check Paycode in new MSHQ data
+mshq_paycodes <- lapply(mshq_new, function(x){
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
+                   stringsAsFactors = F,
+                   colClasses = rep("character", 32),
+                   strip.white = TRUE) 
+ })
+
+mshq_paycodes <- do.call("rbind", mshq_paycodes)
+
+mshq_paycodes <- mshq_paycodes %>%
+         select(FILE_NAME, PAYCODE) %>%
+    filter(!(PAYCODE %in% mapping_paycode)) %>%
+    distinct()
+
+if (nrow(mshq_paycodes) == 0 ) {
+  print("MSHQ Paycodes are up to date in MAPPING_PAYCODE")
+} else {
+  kable(mshq_paycodes, 
+        caption = "The following MSHQ paycodes need to be added to MAPING_PAYCODE:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
+
+# Check paycode in new BISLR data
+bislr_paycodes <- lapply(bislr_new , function(x){
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
+                   stringsAsFactors = F,
+                   colClasses = rep("character", 32),
+                   strip.white = TRUE) 
+ })
+
+bislr_paycodes <- do.call("rbind", bislr_paycodes)
+
+bislr_paycodes <- bislr_paycodes %>%
+         select(FILE_NAME, PAYCODE) %>%
+    filter(!(PAYCODE %in% mapping_paycode)) %>%
+    distinct()
+
+if (nrow(bislr_paycodes) == 0 ) {
+  print("BISLR Paycodes are up to date in MAPPING_PAYCODE")
+} else {
+  kable(bislr_paycodes, 
+        caption = "The following BISLR paycodes need to be added to MAPING_PAYCODE:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
+
+print("Paycode check successful")
+
+```
+
+# Quality Check
+#### Pay Cycle Check
+```{r paycycle check , echo=FALSE}
+
+library(odbc)
+# set universal data directory
+universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
+
+# establish connection to OAO oracle cloud db
+con <- dbConnect(odbc(), "OracleODBC-21_5",
+                 uid = "lenang01",
+                 pwd = "A9xXY#fztK")
+
+# Unique MSHQ files in database
+mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE")%>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull()
+  
+# Unique BISLR files in database
+bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE")%>%
+  select(FILE_NAME) %>%
+  distinct() %>%
+  collect() %>%
+  pull()
+
+# get list of files in insert folder currently
+mshq_insert_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Insert/"))
+bislr_insert_files <- list.files(paste0(universal_dir, "/Labor//Raw Data/BISLR_sftp_sync/Insert/"))
+
+# Get new files
+mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
+bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
+
+# Read mapping paycycle
+unique_dates <- tbl(con,  "MAPPING_PAYCYCLE") %>%
+                    collect() %>%
+                    select(PAYCYCLE_DATE) %>%
+                    mutate(PAYCYCLE_DATE = as.Date(PAYCYCLE_DATE)) %>%
+                    distinct() %>%
+                    pull()
+
+# Check paycycle in MSHQ
+mshq_paycycles <- lapply(mshq_new, function(x){
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
+                   stringsAsFactors = F,
+                   colClasses = rep("character", 32),
+                   strip.white = TRUE)
+})
+
+mshq_paycycles <- do.call("rbind", mshq_paycycles)
+
+new_mshq_paycycles <- mshq_paycycles %>%
+   mutate(END_DATE= as.Date(END_DATE)) %>%
+         select(FILE_NAME, END_DATE) %>%
+    filter(!(END_DATE %in% unique_dates)) %>%
+    distinct()
+
+if (nrow(new_mshq_paycycles) == 0 ) {
+  print("MSHQ End Dates are included in MAPPING_PAYCYCLE")
+} else {
+  kable(new_mshq_paycycles, 
+        caption = "The following MSHQ End Dates are not included in MAPING_PAYCYCLES:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
+
+# Check paycycle in BISLR
+bislr_paycycles <- lapply(bislr_new , function(x){
+  data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
+                   stringsAsFactors = F,
+                   colClasses = rep("character", 32),
+                   strip.white = TRUE) 
+})
+
+bislr_paycycles  <- do.call("rbind", bislr_paycycles )
+
+new_bislr_paycycles <- bislr_paycycles  %>%
+   mutate(END_DATE= as.Date(END_DATE)) %>%
+         select(FILE_NAME, END_DATE) %>%
+    filter(!(END_DATE %in% unique_dates)) %>%
+    distinct()
+
+if (nrow(new_bislr_paycycles ) == 0 ) {
+  print("MSHQ End Dates are included in MAPPING_PAYCYCLE")
+} else {
+  kable(new_bislr_paycycles , 
+        caption = "The following MSHQ End Dates are not included in MAPING_PAYCYCLES:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
+
+print("Paycycle check successful")
+
+```
+
+
