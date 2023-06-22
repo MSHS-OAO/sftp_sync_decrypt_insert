@@ -696,5 +696,3 @@ if (nrow(new_paycycles) == 0 ) {
 
 print("Paycycle check successful")
 ```
-
-
