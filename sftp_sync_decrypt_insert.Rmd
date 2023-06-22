@@ -451,7 +451,7 @@ jobcodes <- tbl(con, "MAPPING_JOBCODE") %>%
   select(JOBCODE, PAYROLL) %>%
   collect()
 
-# read all insert files that need jobcode check
+# read all insert files that need jobcode check and bind them
 mshq_check <- lapply(mshq_new, function(x) {
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x),
                     sep = "~", header = T, stringsAsFactors = F,
@@ -474,6 +474,7 @@ if (length(setdiff((mshq_check %>%
     == 0) {
   print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
+  # create data frame for new jobcodes at MSHQ
   new_mshq_jobcodes <- mshq_check %>%
     filter(!(JOBCODE %in% (jobcodes %>% 
                              filter(PAYROLL == 'MSHQ') %>% 
@@ -482,6 +483,12 @@ if (length(setdiff((mshq_check %>%
     select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
     distinct()
   
+  # save df with new MSHQ jobcodes
+  write_xlsx(new_mshq_jobcodes, paste0(universal_dir, 
+                                       "Mapping/sftp_sync_decrypt_insert/JobCode/MSHQ/new_mshq_jobcodes_", 
+                                       Sys.Date(), ".xlsx"))
+  
+  # print kable of new MSHQ jobcodes
   kable(new_mshq_jobcodes, 
         caption = "The following MSHQ jobcodes need to be added to MAPING_JOBCODE:") %>% 
     kable_styling(latex_options = "striped", 
@@ -496,6 +503,7 @@ if (length(setdiff((mshq_check %>%
     == 0) {
   print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
+  # create data frame for new jobcodes at BISLR
   new_bislr_jobcodes <- bislr_check %>%
     filter(!(JOBCODE %in% (jobcodes %>% 
                              filter(PAYROLL == 'BISLR') %>% 
@@ -504,6 +512,12 @@ if (length(setdiff((mshq_check %>%
     select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
     distinct()
   
+  # save df with new BISLR jobcodes
+  write_xlsx(new_bislr_jobcodes, paste0(universal_dir, 
+                                       "Mapping/sftp_sync_decrypt_insert/JobCode/BISLR/new_bislr_jobcodes_", 
+                                       Sys.Date(), ".xlsx"))
+  
+  # print kable of new MSHQ jobcodes
   kable(new_bislr_jobcodes, 
         caption = "The following BISLR jobcodes need to be added to MAPING_JOBCODE:") %>% 
     kable_styling(latex_options = "striped", 
@@ -514,7 +528,6 @@ if (length(setdiff((mshq_check %>%
 print("Jobcode check successful")
 ```
 
-# Quality Check
 #### Pay Code Check
 ```{r paycode check , echo=FALSE}
 
@@ -555,61 +568,49 @@ mapping_paycode <- tbl(con, "MAPPING_PAYCODE") %>%
                    collect() %>%
                    pull()
 
-# Check Paycode in new MSHQ data
+# read in new insert files and bind them all
 mshq_paycodes <- lapply(mshq_new, function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
                    colClasses = rep("character", 33),
                    strip.white = TRUE) 
  })
-
 mshq_paycodes <- do.call("rbind", mshq_paycodes)
 
-mshq_paycodes <- mshq_paycodes %>%
-         select(FILE_NAME, PAYCODE) %>%
-    filter(!(PAYCODE %in% mapping_paycode)) %>%
-    distinct()
-
-if (nrow(mshq_paycodes) == 0 ) {
-  print("MSHQ Paycodes are up to date in MAPPING_PAYCODE")
-} else {
-  kable(mshq_paycodes, 
-        caption = "The following MSHQ paycodes need to be added to MAPING_PAYCODE:") %>% 
-    kable_styling(latex_options = "striped", 
-                  font_size = 10) %>%
-    row_spec(0, font_size = 13)
-}
-
-# Check paycode in new BISLR data
 bislr_paycodes <- lapply(bislr_new , function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
                    colClasses = rep("character", 33),
                    strip.white = TRUE) 
  })
-
 bislr_paycodes <- do.call("rbind", bislr_paycodes)
 
-bislr_paycodes <- bislr_paycodes %>%
+new_paycodes <- rbind(mshq_paycodes, bislr_paycodes)
+
+# get new paycodes in all new insert files
+new_paycodes <- new_paycodes %>%
          select(FILE_NAME, PAYCODE) %>%
     filter(!(PAYCODE %in% mapping_paycode)) %>%
     distinct()
 
-if (nrow(bislr_paycodes) == 0 ) {
-  print("BISLR Paycodes are up to date in MAPPING_PAYCODE")
+if (nrow(new_paycodes) == 0 ) {
+  print("MSHS Paycodes are up to date in MAPPING_PAYCODE")
 } else {
-  kable(bislr_paycodes, 
-        caption = "The following BISLR paycodes need to be added to MAPING_PAYCODE:") %>% 
+  # save new paycodes df
+  write_xlsx(new_paycodes, paste0(universal_dir, 
+                                  "Mapping/sftp_sync_decrypt_insert/PayCode/new_paycodes_", 
+                                       Sys.Date(), ".xlsx"))
+  # print new paycodes df
+  kable(new_paycodes, 
+        caption = "The following MSHS paycodes need to be added to MAPING_PAYCODE:") %>% 
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
 }
 
 print("Paycode check successful")
-
 ```
 
-# Quality Check
 #### Pay Cycle Check
 ```{r paycycle check , echo=FALSE}
 
@@ -652,60 +653,48 @@ unique_dates <- tbl(con,  "MAPPING_PAYCYCLE") %>%
                     distinct() %>%
                     pull()
 
-# Check paycycle in MSHQ
+# read new insert files for MSHS and bind them all
 mshq_paycycles <- lapply(mshq_new, function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
                    colClasses = rep("character", 33),
                    strip.white = TRUE)
 })
-
 mshq_paycycles <- do.call("rbind", mshq_paycycles)
 
-new_mshq_paycycles <- mshq_paycycles %>%
-   mutate(END_DATE= as.Date(END_DATE)) %>%
-         select(FILE_NAME, END_DATE) %>%
-    filter(!(END_DATE %in% unique_dates)) %>%
-    distinct()
-
-if (nrow(new_mshq_paycycles) == 0 ) {
-  print("MSHQ End Dates are included in MAPPING_PAYCYCLE")
-} else {
-  kable(new_mshq_paycycles, 
-        caption = "The following MSHQ End Dates are not included in MAPING_PAYCYCLES:") %>% 
-    kable_styling(latex_options = "striped", 
-                  font_size = 10) %>%
-    row_spec(0, font_size = 13)
-}
-
-# Check paycycle in BISLR
 bislr_paycycles <- lapply(bislr_new , function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
                    colClasses = rep("character", 33),
                    strip.white = TRUE) 
 })
+bislr_paycycles  <- do.call("rbind", bislr_paycycles)
 
-bislr_paycycles  <- do.call("rbind", bislr_paycycles )
+new_paycycles <- rbind(mshq_paycycles, bislr_paycycles)
 
-new_bislr_paycycles <- bislr_paycycles  %>%
+# get df of all new paycycles
+new_paycycles <- new_paycycles %>%
    mutate(END_DATE= as.Date(END_DATE)) %>%
          select(FILE_NAME, END_DATE) %>%
     filter(!(END_DATE %in% unique_dates)) %>%
     distinct()
 
-if (nrow(new_bislr_paycycles ) == 0 ) {
-  print("MSHQ End Dates are included in MAPPING_PAYCYCLE")
+if (nrow(new_paycycles) == 0 ) {
+  print("MSHS End Dates are included in MAPPING_PAYCYCLE")
 } else {
-  kable(new_bislr_paycycles , 
-        caption = "The following MSHQ End Dates are not included in MAPING_PAYCYCLES:") %>% 
+  # save df of new paycycles
+  write_xlsx(new_paycycles, paste0(universal_dir, 
+                                  "Mapping/sftp_sync_decrypt_insert/PayCycle/new_paycycles_", 
+                                       Sys.Date(), ".xlsx"))
+  # print new paycycles
+  kable(new_paycycles, 
+        caption = "The following MSHS End Dates are not included in MAPING_PAYCYCLES:") %>% 
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
 }
 
 print("Paycycle check successful")
-
 ```
 
 
