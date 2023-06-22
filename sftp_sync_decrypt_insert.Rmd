@@ -559,7 +559,7 @@ mapping_paycode <- tbl(con, "MAPPING_PAYCODE") %>%
 mshq_paycodes <- lapply(mshq_new, function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
-                   colClasses = rep("character", 32),
+                   colClasses = rep("character", 33),
                    strip.white = TRUE) 
  })
 
@@ -584,7 +584,7 @@ if (nrow(mshq_paycodes) == 0 ) {
 bislr_paycodes <- lapply(bislr_new , function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
-                   colClasses = rep("character", 32),
+                   colClasses = rep("character", 33),
                    strip.white = TRUE) 
  })
 
@@ -656,7 +656,7 @@ unique_dates <- tbl(con,  "MAPPING_PAYCYCLE") %>%
 mshq_paycycles <- lapply(mshq_new, function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
-                   colClasses = rep("character", 32),
+                   colClasses = rep("character", 33),
                    strip.white = TRUE)
 })
 
@@ -682,7 +682,7 @@ if (nrow(new_mshq_paycycles) == 0 ) {
 bislr_paycycles <- lapply(bislr_new , function(x){
   data <- read.csv(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Insert/", x), sep = "~", header = T,
                    stringsAsFactors = F,
-                   colClasses = rep("character", 32),
+                   colClasses = rep("character", 33),
                    strip.white = TRUE) 
 })
 
