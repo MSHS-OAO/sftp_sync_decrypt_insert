@@ -500,6 +500,38 @@
         "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:07:53 UTC; unix"
       }
     },
+    "dbplyr": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Type": "Package",
+        "Package": "dbplyr",
+        "Title": "A 'dplyr' Back End for Databases",
+        "Version": "2.3.2",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@rstudio.com\", role = c(\"aut\", \"cre\")),\n    person(\"Maximilian\", \"Girlich\", role = \"aut\"),\n    person(\"Edgar\", \"Ruiz\", role = \"aut\"),\n    person(\"RStudio\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Description": "A 'dplyr' back end for databases that allows you to work with\n    remote database tables as if they are in-memory data frames.  Basic\n    features works with any database that has a 'DBI' back end; more\n    advanced features require 'SQL' translation to be provided by the\n    package author.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://dbplyr.tidyverse.org/, https://github.com/tidyverse/dbplyr",
+        "BugReports": "https://github.com/tidyverse/dbplyr/issues",
+        "Depends": "R (>= 3.1)",
+        "Imports": "blob (>= 1.2.0), cli (>= 3.4.1), DBI (>= 1.0.0), dplyr (>=\n1.1.0), glue (>= 1.2.0), lifecycle (>= 1.0.3), magrittr,\nmethods, pillar (>= 1.5.0), purrr (>= 1.0.1), R6 (>= 2.2.2),\nrlang (>= 1.0.6), tibble (>= 1.4.2), tidyr (>= 1.3.0),\ntidyselect (>= 1.2.0), utils, vctrs (>= 0.5.0), withr",
+        "Suggests": "bit64, covr, knitr, Lahman, nycflights13, odbc, RMariaDB (>=\n1.0.2), rmarkdown, RPostgres (>= 1.1.3), RPostgreSQL, RSQLite\n(>= 2.2.15), testthat (>= 3.0.2)",
+        "VignetteBuilder": "knitr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "Language": "en-gb",
+        "RoxygenNote": "7.2.3",
+        "Collate": "'compat-types-check.R' 'compat-obj-type.R' 'utils.R' 'sql.R'\n'escape.R' 'translate-sql-cut.R' 'translate-sql-quantile.R'\n'translate-sql-string.R' 'translate-sql-paste.R'\n'translate-sql-helpers.R' 'translate-sql-window.R'\n'translate-sql-conditional.R' 'backend-.R' 'backend-access.R'\n'backend-hana.R' 'backend-hive.R' 'backend-impala.R'\n'verb-copy-to.R' 'backend-mssql.R' 'backend-mysql.R'\n'backend-odbc.R' 'backend-oracle.R' 'backend-postgres.R'\n'backend-postgres-old.R' 'backend-redshift.R'\n'backend-snowflake.R' 'backend-sqlite.R' 'backend-teradata.R'\n'build-sql.R' 'data-cache.R' 'data-lahman.R'\n'data-nycflights13.R' 'db-escape.R' 'db-io.R' 'db-sql.R' 'db.R'\n'dbplyr.R' 'explain.R' 'ident.R' 'join-by-compat.R'\n'join-cols-compat.R' 'lazy-join-query.R' 'lazy-ops.R'\n'lazy-query.R' 'lazy-select-query.R' 'lazy-set-op-query.R'\n'memdb.R' 'optimise-utils.R' 'pillar.R' 'progress.R'\n'query-join.R' 'query-select.R' 'query-semi-join.R'\n'query-set-op.R' 'query.R' 'reexport.R' 'remote.R' 'rows.R'\n'schema.R' 'simulate.R' 'sql-build.R' 'sql-clause.R'\n'sql-expr.R' 'src-sql.R' 'src_dbi.R' 'tbl-lazy.R' 'tbl-sql.R'\n'test-frame.R' 'testthat.R' 'tidyeval-across.R' 'tidyeval.R'\n'translate-sql.R' 'utils-format.R' 'verb-arrange.R'\n'verb-compute.R' 'verb-count.R' 'verb-distinct.R'\n'verb-do-query.R' 'verb-do.R' 'verb-expand.R' 'verb-fill.R'\n'verb-filter.R' 'verb-group_by.R' 'verb-head.R' 'verb-joins.R'\n'verb-mutate.R' 'verb-pivot-longer.R' 'verb-pivot-wider.R'\n'verb-pull.R' 'verb-select.R' 'verb-set-ops.R' 'verb-slice.R'\n'verb-summarise.R' 'verb-uncount.R' 'verb-window.R' 'zzz.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2023-03-21 19:35:48 UTC; hadleywickham",
+        "Author": "Hadley Wickham [aut, cre],\n  Maximilian Girlich [aut],\n  Edgar Ruiz [aut],\n  RStudio [cph, fnd]",
+        "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-03-21 20:30:02 UTC",
+        "Built": "R 4.2.3; ; 2023-04-26 16:57:46 UTC; unix"
+      }
+    },
     "digest": {
       "Source": "CRAN",
       "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
@@ -1409,6 +1441,37 @@
         "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:12:32 UTC; unix"
       }
     },
+    "purrr": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "purrr",
+        "Title": "Functional Programming Tools",
+        "Version": "1.0.1",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@rstudio.com\", role = c(\"aut\", \"cre\"),\n           comment = c(ORCID = \"0000-0003-4757-117X\")),\n    person(\"Lionel\", \"Henry\", , \"lionel@rstudio.com\", role = \"aut\"),\n    person(\"RStudio\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Description": "A complete and consistent functional programming toolkit for\n    R.",
+        "License": "MIT + file LICENSE",
+        "URL": "https://purrr.tidyverse.org/, https://github.com/tidyverse/purrr",
+        "BugReports": "https://github.com/tidyverse/purrr/issues",
+        "Depends": "R (>= 3.4.0)",
+        "Imports": "cli (>= 3.4.0), lifecycle (>= 1.0.3), magrittr (>= 1.5.0),\nrlang (>= 0.4.10), vctrs (>= 0.5.0)",
+        "Suggests": "covr, dplyr (>= 0.7.8), httr, knitr, lubridate, rmarkdown,\ntestthat (>= 3.0.0), tibble, tidyselect",
+        "LinkingTo": "cli",
+        "VignetteBuilder": "knitr",
+        "Biarch": "true",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "RoxygenNote": "7.2.3",
+        "NeedsCompilation": "yes",
+        "Packaged": "2023-01-09 14:36:20 UTC; hadleywickham",
+        "Author": "Hadley Wickham [aut, cre] (<https://orcid.org/0000-0003-4757-117X>),\n  Lionel Henry [aut],\n  RStudio [cph, fnd]",
+        "Maintainer": "Hadley Wickham <hadley@rstudio.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-01-10 14:40:02 UTC",
+        "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:05:23 UTC; unix"
+      }
+    },
     "rappdirs": {
       "Source": "CRAN",
       "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
@@ -1870,6 +1933,38 @@
         "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:01:09 UTC; unix"
       }
     },
+    "tidyr": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "tidyr",
+        "Title": "Tidy Messy Data",
+        "Version": "1.3.0",
+        "Authors@R": "c(\n    person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\")),\n    person(\"Davis\", \"Vaughan\", , \"davis@posit.co\", role = \"aut\"),\n    person(\"Maximilian\", \"Girlich\", role = \"aut\"),\n    person(\"Kevin\", \"Ushey\", , \"kevin@posit.co\", role = \"ctb\"),\n    person(\"Posit, PBC\", role = c(\"cph\", \"fnd\"))\n  )",
+        "Description": "Tools to help to create tidy data, where each column is a\n    variable, each row is an observation, and each cell contains a single\n    value.  'tidyr' contains tools for changing the shape (pivoting) and\n    hierarchy (nesting and 'unnesting') of a dataset, turning deeply\n    nested lists into rectangular data frames ('rectangling'), and\n    extracting values out of string columns. It also includes tools for\n    working with missing values (both implicit and explicit).",
+        "License": "MIT + file LICENSE",
+        "URL": "https://tidyr.tidyverse.org, https://github.com/tidyverse/tidyr",
+        "BugReports": "https://github.com/tidyverse/tidyr/issues",
+        "Depends": "R (>= 3.4.0)",
+        "Imports": "cli (>= 3.4.1), dplyr (>= 1.0.10), glue, lifecycle (>= 1.0.3),\nmagrittr, purrr (>= 1.0.1), rlang (>= 1.0.4), stringr (>=\n1.5.0), tibble (>= 2.1.1), tidyselect (>= 1.2.0), utils, vctrs\n(>= 0.5.2)",
+        "Suggests": "covr, data.table, knitr, readr, repurrrsive (>= 1.1.0),\nrmarkdown, testthat (>= 3.0.0)",
+        "LinkingTo": "cpp11 (>= 0.4.0)",
+        "VignetteBuilder": "knitr",
+        "Config/Needs/website": "tidyverse/tidytemplate",
+        "Config/testthat/edition": "3",
+        "Encoding": "UTF-8",
+        "LazyData": "true",
+        "RoxygenNote": "7.2.3",
+        "SystemRequirements": "C++11",
+        "NeedsCompilation": "yes",
+        "Packaged": "2023-01-23 22:21:00 UTC; hadleywickham",
+        "Author": "Hadley Wickham [aut, cre],\n  Davis Vaughan [aut],\n  Maximilian Girlich [aut],\n  Kevin Ushey [ctb],\n  Posit, PBC [cph, fnd]",
+        "Maintainer": "Hadley Wickham <hadley@posit.co>",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-01-24 16:00:02 UTC",
+        "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:05:29 UTC; unix"
+      }
+    },
     "tidyselect": {
       "Source": "CRAN",
       "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
@@ -2174,6 +2269,9 @@
     }
   },
   "files": {
+    ".RData": {
+      "checksum": "375b036ed0bba0915144b9a7b7637894"
+    },
     "MSH_ALLINTERNAL_OB_PRIVATE.asc": {
       "checksum": "8dfeb201703f2509259e249d705c0d00"
     },
@@ -2183,8 +2281,11 @@
     "README.md": {
       "checksum": "6cf30d8ac73903e4aa8ccfe2c42c9796"
     },
+    "sftp_sync_decrypt_insert.html": {
+      "checksum": "8578251ff2da7130ba381c61e03b682e"
+    },
     "sftp_sync_decrypt_insert.Rmd": {
-      "checksum": "73a8eb6402fe79474765ceb9c787770d"
+      "checksum": "d8206efca1957e2836d41cc0aa32009e"
     },
     "sftp_sync_decrypt.html": {
       "checksum": "b4862d4ddc253698e22f9cc4b04a72cd"
