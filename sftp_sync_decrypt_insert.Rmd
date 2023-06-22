@@ -20,7 +20,6 @@ library(writexl)
 library(kableExtra)
 library(odbc)
 library(DBI)
-library(dbplyr)
 ```
 
 # SFTP Synchronization
