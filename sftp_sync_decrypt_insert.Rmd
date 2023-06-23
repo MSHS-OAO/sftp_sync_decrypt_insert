@@ -471,8 +471,7 @@ bislr_check <- do.call("rbind", bislr_check)
 if (length(setdiff((mshq_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
-                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
-    == 0) {
+                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull()))) == 0) {
   print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at MSHQ
@@ -497,11 +496,10 @@ if (length(setdiff((mshq_check %>%
     row_spec(0, font_size = 13)
 }
 
-if (length(setdiff((mshq_check %>% 
+if (length(setdiff((bislr_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
-                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
-    == 0) {
+                    filter(PAYROLL == 'BISLR') %>% select(JOBCODE) %>% pull()))) == 0) {
   print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at BISLR
