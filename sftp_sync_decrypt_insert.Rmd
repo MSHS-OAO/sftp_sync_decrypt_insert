@@ -20,6 +20,7 @@ library(writexl)
 library(kableExtra)
 library(odbc)
 library(DBI)
+library(dbplyr)
 ```
 
 # SFTP Synchronization
@@ -467,11 +468,12 @@ bislr_check <- lapply(bislr_new, function(x) {
 bislr_check <- do.call("rbind", bislr_check)
 
 # check jobcodes in new insert files with jobcode mapping file
-if (length(setdiff((mshq_check %>% 
+if (is.null(mshq_check)) {
+  print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
+} else if (length(setdiff((mshq_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
-                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
-    == 0) {
+                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull()))) == 0){
   print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at MSHQ
@@ -496,11 +498,14 @@ if (length(setdiff((mshq_check %>%
     row_spec(0, font_size = 13)
 }
 
-if (length(setdiff((mshq_check %>% 
+
+# check jobcodes in new insert files with jobcode mapping file
+if (is.null(bislr_check)) {
+  print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
+} else if (length(setdiff((bislr_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
-                    filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull())))
-    == 0) {
+                    filter(PAYROLL == 'BISLR') %>% select(JOBCODE) %>% pull()))) == 0){
   print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at BISLR
@@ -517,7 +522,7 @@ if (length(setdiff((mshq_check %>%
                                        "Mapping/sftp_sync_decrypt_insert/JobCode/BISLR/new_bislr_jobcodes_", 
                                        Sys.Date(), ".xlsx"))
   
-  # print kable of new MSHQ jobcodes
+  # print kable of new BISLR jobcodes
   kable(new_bislr_jobcodes, 
         caption = "The following BISLR jobcodes need to be added to MAPING_JOBCODE:") %>% 
     kable_styling(latex_options = "striped", 
@@ -530,7 +535,6 @@ print("Jobcode check successful")
 
 #### Pay Code Check
 ```{r paycode check , echo=FALSE}
-
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
@@ -588,12 +592,16 @@ bislr_paycodes <- do.call("rbind", bislr_paycodes)
 new_paycodes <- rbind(mshq_paycodes, bislr_paycodes)
 
 # get new paycodes in all new insert files
-new_paycodes <- new_paycodes %>%
+if (!is.null(new_paycodes)) {
+  new_paycodes <- new_paycodes %>%
          select(FILE_NAME, PAYCODE) %>%
     filter(!(PAYCODE %in% mapping_paycode)) %>%
     distinct()
+}
 
-if (nrow(new_paycodes) == 0 ) {
+if(is.null(new_paycodes)) {
+  print("MSHS Paycodes are up to date in MAPPING_PAYCODE")
+} else if (nrow(new_paycodes) == 0) {
   print("MSHS Paycodes are up to date in MAPPING_PAYCODE")
 } else {
   # save new paycodes df
@@ -613,8 +621,6 @@ print("Paycode check successful")
 
 #### Pay Cycle Check
 ```{r paycycle check , echo=FALSE}
-
-library(odbc)
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
@@ -673,13 +679,17 @@ bislr_paycycles  <- do.call("rbind", bislr_paycycles)
 new_paycycles <- rbind(mshq_paycycles, bislr_paycycles)
 
 # get df of all new paycycles
-new_paycycles <- new_paycycles %>%
+if (!is.null(new_paycycles)) {
+  new_paycycles <- new_paycycles %>%
    mutate(END_DATE= as.Date(END_DATE)) %>%
          select(FILE_NAME, END_DATE) %>%
     filter(!(END_DATE %in% unique_dates)) %>%
     distinct()
+}
 
-if (nrow(new_paycycles) == 0 ) {
+if (is.null(new_paycycles)) {
+  print("MSHS End Dates are included in MAPPING_PAYCYCLE")
+} else if (nrow(new_paycycles) == 0) {
   print("MSHS End Dates are included in MAPPING_PAYCYCLE")
 } else {
   # save df of new paycycles
@@ -692,6 +702,10 @@ if (nrow(new_paycycles) == 0 ) {
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
+}
+
+print("Paycycle check successful")
+```
 }
 
 print("Paycycle check successful")
