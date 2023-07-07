@@ -421,19 +421,17 @@ print("bislr_insert successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OracleODBC-21_5",
-                 uid = "lenang01",
-                 pwd = "A9xXY#fztK")
+con <- dbConnect(odbc(), "OAO Cloud DB Staging")
 
 # get set of unique files in MSHQ database
-mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE") %>%
+mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull
 
 # get set of unique files in BISLR database
-bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE") %>%
+bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE") %>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -448,7 +446,7 @@ mshq_new <- setdiff(mshq_inserts, mshq_db_files)
 bislr_new <- setdiff(bislr_inserts, bislr_db_files)
 
 # get all jobcodes in mapping file within database
-jobcodes <- tbl(con, "MAPPING_JOBCODE") %>%
+jobcodes <- tbl(con, "LPM_MAPPING_JOBCODE") %>%
   select(JOBCODE, PAYROLL) %>%
   collect()
 
@@ -469,12 +467,12 @@ bislr_check <- do.call("rbind", bislr_check)
 
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(mshq_check)) {
-  print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
+  print("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((mshq_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull()))) == 0){
-  print("MSHQ Jobcodes are up to date in MAPPING_JOBCODE")
+  print("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at MSHQ
   new_mshq_jobcodes <- mshq_check %>%
@@ -501,12 +499,12 @@ if (is.null(mshq_check)) {
 
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(bislr_check)) {
-  print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
+  print("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((bislr_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'BISLR') %>% select(JOBCODE) %>% pull()))) == 0){
-  print("BISLR Jobcodes are up to date in MAPPING_JOBCODE")
+  print("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at BISLR
   new_bislr_jobcodes <- bislr_check %>%
@@ -539,19 +537,17 @@ print("Jobcode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OracleODBC-21_5",
-                 uid = "lenang01",
-                 pwd = "A9xXY#fztK")
+con <- dbConnect(odbc(), "OAO Cloud DB Staging")
 
 # Unique MSHQ files in database
-mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE")%>%
+mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull()
   
 # Unique BISLR files in database
-bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE")%>%
+bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -566,7 +562,7 @@ mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
 bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
 
 # Read mapping pay code
-mapping_paycode <- tbl(con, "MAPPING_PAYCODE") %>%
+mapping_paycode <- tbl(con, "LPM_MAPPING_PAYCODE") %>%
                    select(PAYCODE_RAW) %>%
                    distinct() %>%
                    collect() %>%
@@ -600,9 +596,9 @@ if (!is.null(new_paycodes)) {
 }
 
 if(is.null(new_paycodes)) {
-  print("MSHS Paycodes are up to date in MAPPING_PAYCODE")
+  print("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
 } else if (nrow(new_paycodes) == 0) {
-  print("MSHS Paycodes are up to date in MAPPING_PAYCODE")
+  print("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
 } else {
   # save new paycodes df
   write_xlsx(new_paycodes, paste0(universal_dir, 
@@ -625,19 +621,17 @@ print("Paycode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OracleODBC-21_5",
-                 uid = "lenang01",
-                 pwd = "A9xXY#fztK")
+con <- dbConnect(odbc(), "OAO Cloud DB Staging")
 
 # Unique MSHQ files in database
-mshq_db_files <- tbl(con, "DATA_MSHQ_ORACLE")%>%
+mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull()
   
 # Unique BISLR files in database
-bislr_db_files <- tbl(con, "DATA_BISLR_ORACLE")%>%
+bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -652,7 +646,7 @@ mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
 bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
 
 # Read mapping paycycle
-unique_dates <- tbl(con,  "MAPPING_PAYCYCLE") %>%
+unique_dates <- tbl(con, "LPM_MAPPING_PAYCYCLE") %>%
                     collect() %>%
                     select(PAYCYCLE_DATE) %>%
                     mutate(PAYCYCLE_DATE = as.Date(PAYCYCLE_DATE)) %>%
@@ -688,9 +682,9 @@ if (!is.null(new_paycycles)) {
 }
 
 if (is.null(new_paycycles)) {
-  print("MSHS End Dates are included in MAPPING_PAYCYCLE")
+  print("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
 } else if (nrow(new_paycycles) == 0) {
-  print("MSHS End Dates are included in MAPPING_PAYCYCLE")
+  print("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
 } else {
   # save df of new paycycles
   write_xlsx(new_paycycles, paste0(universal_dir, 
