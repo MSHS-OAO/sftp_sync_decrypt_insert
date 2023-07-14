@@ -421,7 +421,7 @@ print("bislr_insert successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Staging")
+con <- dbConnect(odbc(), "OAO Cloud DB Greg")
 
 # get set of unique files in MSHQ database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
@@ -537,7 +537,7 @@ print("Jobcode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Staging")
+con <- dbConnect(odbc(), "OAO Cloud DB Greg")
 
 # Unique MSHQ files in database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
@@ -621,7 +621,7 @@ print("Paycode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Staging")
+con <- dbConnect(odbc(), "OAO Cloud DB Greg")
 
 # Unique MSHQ files in database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
