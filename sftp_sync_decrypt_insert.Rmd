@@ -12,8 +12,9 @@ caption {
     }
 ```
 
-```{r libraries, include=F}
+```{r libraries constants, include=F}
 library(dplyr)
+library(tidyr)
 library(glue)
 library(readxl)
 library(writexl)
@@ -21,6 +22,74 @@ library(kableExtra)
 library(odbc)
 library(DBI)
 library(dbplyr)
+library(doParallel)
+
+dsn <- "OAO Cloud DB Greg"
+prod_dsn <- "OAO Cloud DB Staging"
+
+# function to convert each record of df to insert statement
+get_values <- function(source_table, destination_schema, destination_table) {
+  
+  PARTNER                   <- source_table[1]
+  HOME_FACILITY             <- source_table[2]
+  HOME_DEPARTMENT           <- source_table[3]
+  WORKED_FACILITY           <- source_table[4]
+  WORKED_DEPARTMENT         <- source_table[5]
+  START_DATE                <- source_table[6]
+  END_DATE                  <- source_table[7]
+  EMPLOYEE_ID               <- source_table[8]
+  EMPLOYEE_NAME             <- source_table[9]
+  APPROVED_HOURS            <- source_table[10]
+  POSITION_CODE             <- source_table[11]
+  JOBCODE                   <- source_table[12]
+  PAYCODE                   <- source_table[13]
+  WD_HOURS                  <- source_table[14]
+  WD_EXPENSE                <- source_table[15]
+  HOME_DEPARTMENT_NAME      <- source_table[16]
+  WORKED_DEPARTMENT_NAME    <- source_table[17]
+  POSITION_CODE_DESCRIPTION <- source_table[18]
+  LOCATION_DESCRIPTION      <- source_table[19]
+  WD_COFT                   <- source_table[20]
+  WD_ACCOUNT                <- source_table[21]
+  WD_LOCATION               <- source_table[22]
+  WD_DEPARTMENT             <- source_table[23]
+  WD_FUND_NUMBER            <- source_table[24]
+  HD_COFT                   <- source_table[25]
+  HD_LOCATION               <- source_table[26]
+  HD_DEPARTMENT             <- source_table[27]
+  WD_COA                    <- source_table[28]
+  HD_COA                    <- source_table[29]
+  PAYROLL_NAME              <- source_table[30]
+  REVERSE_MAP_WORKED        <- source_table[31]
+  REVERSE_MAP_HOME          <- source_table[32]
+  FILE_NAME                 <- source_table[33]
+  
+  values <- glue("INTO {glue::double_quote(destination_schema)}.{glue::double_quote(destination_table)}
+                 (PARTNER, HOME_FACILITY, HOME_DEPARTMENT, WORKED_FACILITY, 
+                 WORKED_DEPARTMENT, START_DATE, END_DATE, EMPLOYEE_ID, 
+                 EMPLOYEE_NAME, APPROVED_HOURS, POSITION_CODE, JOBCODE, PAYCODE,
+                 WD_HOURS, WD_EXPENSE, HOME_DEPARTMENT_NAME, 
+                 WORKED_DEPARTMENT_NAME, POSITION_CODE_DESCRIPTION, 
+                 LOCATION_DESCRIPTION, WD_COFT, WD_ACCOUNT, WD_LOCATION, 
+                 WD_DEPARTMENT, WD_FUND_NUMBER, HD_COFT, HD_LOCATION, 
+                 HD_DEPARTMENT, WD_COA, HD_COA, PAYROLL_NAME, 
+                 REVERSE_MAP_WORKED, REVERSE_MAP_HOME, FILE_NAME)
+                 VALUES ('{PARTNER}', '{HOME_FACILITY}', '{HOME_DEPARTMENT}',
+                 '{WORKED_FACILITY}', '{WORKED_DEPARTMENT}', 
+                 TO_DATE('{START_DATE}', 'yyyy-mm-dd'), 
+                 TO_DATE('{END_DATE}', 'yyyy-mm-dd'), 
+                 '{EMPLOYEE_ID}', '{EMPLOYEE_NAME}', '{APPROVED_HOURS}', 
+                 '{POSITION_CODE}', '{JOBCODE}', '{PAYCODE}', '{WD_HOURS}',
+                 '{WD_EXPENSE}', '{HOME_DEPARTMENT_NAME}', 
+                 '{WORKED_DEPARTMENT_NAME}', '{POSITION_CODE_DESCRIPTION}',
+                 '{LOCATION_DESCRIPTION}', '{WD_COFT}', '{WD_ACCOUNT}',
+                 '{WD_LOCATION}', '{WD_DEPARTMENT}', '{WD_FUND_NUMBER}',
+                 '{HD_COFT}', '{HD_LOCATION}', '{HD_DEPARTMENT}', '{WD_COA}',
+                 '{HD_COA}', '{PAYROLL_NAME}', '{REVERSE_MAP_WORKED}', 
+                 '{REVERSE_MAP_HOME}', '{FILE_NAME}')")
+  
+  return(values)
+}
 ```
 
 # SFTP Synchronization
@@ -421,7 +490,7 @@ print("bislr_insert successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Greg")
+con <- dbConnect(odbc(), dsn)
 
 # get set of unique files in MSHQ database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
@@ -479,8 +548,12 @@ if (is.null(mshq_check)) {
     filter(!(JOBCODE %in% (jobcodes %>% 
                              filter(PAYROLL == 'MSHQ') %>% 
                              select(JOBCODE) %>% pull))) %>%
-    mutate(PAYROLL = "MSHQ") %>%
-    select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
+    mutate(PAYROLL = "MSHQ",
+           PROVIDER = "",
+           JOBCODE_PREMIER = "",
+           JOBCODE_PREMIER_DESCRIPTION = "") %>%
+    rename(JOBCODE_DESCRIPTION = POSITION_CODE_DESCRIPTION) %>%
+    select(JOBCODE, PAYROLL, JOBCODE_DESCRIPTION, PROVIDER, JOBCODE_PREMIER, JOBCODE_PREMIER_DESCRIPTION) %>%
     distinct()
   
   # save df with new MSHQ jobcodes
@@ -511,8 +584,12 @@ if (is.null(bislr_check)) {
     filter(!(JOBCODE %in% (jobcodes %>% 
                              filter(PAYROLL == 'BISLR') %>% 
                              select(JOBCODE) %>% pull))) %>%
-    mutate(PAYROLL = "BISLR") %>%
-    select(JOBCODE, PAYROLL, POSITION_CODE_DESCRIPTION) %>%
+    mutate(PAYROLL = "BISLR",
+           PROVIDER = "",
+           JOBCODE_PREMIER = "",
+           JOBCODE_PREMIER_DESCRIPTION = "") %>%
+    rename(JOBCODE_DESCRIPTION = POSITION_CODE_DESCRIPTION) %>%
+    select(JOBCODE, PAYROLL, JOBCODE_DESCRIPTION, PROVIDER, JOBCODE_PREMIER, JOBCODE_PREMIER_DESCRIPTION) %>%
     distinct()
   
   # save df with new BISLR jobcodes
@@ -537,7 +614,7 @@ print("Jobcode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Greg")
+con <- dbConnect(odbc(), dsn)
 
 # Unique MSHQ files in database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
@@ -621,7 +698,7 @@ print("Paycode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), "OAO Cloud DB Greg")
+con <- dbConnect(odbc(), dsn)
 
 # Unique MSHQ files in database
 mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
@@ -699,4 +776,355 @@ if (is.null(new_paycycles)) {
 }
 
 print("Paycycle check successful")
+```
+
+#### Insert Check
+```{r Insert Check, echo=FALSE}
+# establish connection to OAO oracle cloud db
+con <- dbConnect(odbc(), dsn)
+
+# mshq check for inserts ready to be uploaded to OAO DB
+mshq_eligible_insert <- setdiff(mshq_inserts,
+          tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
+            select(FILE_NAME) %>%
+            distinct() %>%
+            collect() %>%
+            pull())
+if (length(mshq_eligible_insert > 0)) {
+  cat(paste0(mshq_eligible_insert, " is ready to be uploaded to the OAO DB"))
+} else {
+  cat("LPM_DATA_MSHQ_ORACLE is up to date")
+}
+
+
+# bislr check for inserts ready to be uploaded to OAO DB
+bislr_eligible_insert <- setdiff(bislr_inserts,
+          tbl(con, "LPM_DATA_BISLR_ORACLE") %>%
+            select(FILE_NAME) %>%
+            distinct() %>%
+            collect() %>%
+            pull())
+if (length(bislr_eligible_insert > 0)) {
+  cat(paste0(bislr_eligible_insert, " is ready to be uploaded to the OAO DB"))
+} else {
+  cat("LPM_DATA_BISLR_ORACLE is up to date")
+}
+```
+
+# Merge Schemas
+### Merge Mapping Tables
+```{r Merge Mapping Tables , echo=FALSE}
+# merge statement jobcode mapping table
+jobcode_merge <- glue(
+  "MERGE INTO LPM_MAPPING_JOBCODE destination
+   USING LENANG01.LPM_MAPPING_JOBCODE source
+   ON (destination.PAYROLL = source.PAYROLL AND
+       destination.JOBCODE = source.JOBCODE )
+   WHEN MATCHED THEN
+   UPDATE SET destination.JOBCODE_DESCRIPTION = source.JOBCODE_DESCRIPTION,
+              destination.PROVIDER = source.PROVIDER,
+              destination.JOBCODE_PREMIER = source.JOBCODE_PREMIER,
+              destination.JOBCODE_PREMIER_DESCRIPTION = source.JOBCODE_PREMIER_DESCRIPTION
+   WHEN NOT MATCHED THEN
+   INSERT (destination.JOBCODE,
+           destination.PAYROLL,
+           destination.JOBCODE_DESCRIPTION,
+           destination.PROVIDER,
+           destination.JOBCODE_PREMIER,
+           destination.JOBCODE_PREMIER_DESCRIPTION)
+   VALUES (source.JOBCODE,
+           source.PAYROLL,
+           source.JOBCODE_DESCRIPTION,
+           source.PROVIDER,
+           source.JOBCODE_PREMIER,
+           source.JOBCODE_PREMIER_DESCRIPTION);"
+)
+
+
+# merge statement for paycode mapping table
+paycode_merge <- glue(
+  "MERGE INTO LPM_MAPPING_PAYCODE destination
+   USING LENANG01.LPM_MAPPING_PAYCODE source
+   ON (destination.PAYCODE_RAW = source.PAYCODE_RAW)
+   WHEN MATCHED THEN
+   UPDATE SET destination.PAYCODE_PREMIER = source.PAYCODE_PREMIER,
+              destination.PAYCODE_DESCRIPTION = source.PAYCODE_DESCRIPTION,
+              destination.PAYCODE_CATEGORY = source.PAYCODE_CATEGORY,
+              destination.INCLUDE_HOURS = source.INCLUDE_HOURS,
+              destination.INCLUDE_EXPENSES = source.INCLUDE_EXPENSES,
+              destination.WORKED_PAYCODE = source.WORKED_PAYCODE
+   WHEN NOT MATCHED THEN
+   INSERT (destination.PAYCODE_RAW,
+           destination.PAYCODE_PREMIER,
+           destination.PAYCODE_DESCRIPTION,
+           destination.PAYCODE_CATEGORY,
+           destination.INCLUDE_HOURS,
+           destination.INCLUDE_EXPENSES,
+           destination.WORKED_PAYCODE)
+   VALUES (source.PAYCODE_RAW,
+           source.PAYCODE_PREMIER,
+           source.PAYCODE_DESCRIPTION,
+           source.PAYCODE_CATEGORY,
+           source.INCLUDE_HOURS,
+           source.INCLUDE_EXPENSES,
+           source.WORKED_PAYCODE);"
+)
+
+# merge statement for paycycle mapping table
+paycycle_merge <- glue(
+  "MERGE INTO LPM_MAPPING_PAYCYCLE destination
+   USING LENANG01.LPM_MAPPING_PAYCYCLE source
+   ON (destination.PAYCYCLE_DATE = source.PAYCYCLE_DATE)
+   WHEN MATCHED THEN
+   UPDATE SET destination.PP_START_DATE = source.PP_START_DATE,
+              destination.PP_END_DATE = source.PP_END_DATE,
+              destination.PREMIER_DISTRIBUTION = source.PREMIER_DISTRIBUTION
+   WHEN NOT MATCHED THEN
+   INSERT (destination.PP_START_DATE,
+           destination.PP_END_DATE,
+           destination.PREMIER_DISTRIBUTION)
+   VALUES (source.PP_START_DATE,
+           source.PP_END_DATE,
+           source.PREMIER_DISTRIBUTION);"
+) 
+
+# merge statement for repdef mapping table
+repdef_merge <- glue(
+  "MERGE INTO LPM_MAPPING_REPDEF destination
+   USING LENANG01.LPM_MAPPING_REPDEF source
+   ON (destination.DEFINITION_CODE = source.DEFINITION_CODE AND
+       destination.ORACLE_COST_CENTER = source.ORACLE_COST_CENTER AND
+       destination.CLOSED = source.CLOSED)
+   WHEN MATCHED THEN
+   UPDATE SET destination.DEFINITION_NAME = source.DEFINITION_NAME,
+              destination.KEY_VOLUME = source.KEY_VOLUME,
+              destination.LEGACY_COST_CENTER = source.LEGACY_COST_CENTER,
+              destination.COST_CENTER_DESCRIPTION = source.COST_CENTER_DESCRIPTION,
+              destination.SITE = source.SITE,
+              destination.CORPORATE_SERVICE_LINE = source.CORPORATE_SERVICE_LINE,
+              destination.VP = source.VP,
+              destination.FTE_TREND = source.FTE_TREND,
+              destination.DEPARTMENT_BREAKDOWN = source.DEPARTMENT_BREAKDOWN
+   WHEN NOT MATCHED THEN
+   INSERT (destination.DEFINITION_NAME,
+           destination.KEY_VOLUME,
+           destination.LEGACY_COST_CENTER,
+           destination.COST_CENTER_DESCRIPTION,
+           destination.SITE,
+           destination.CORPORATE_SERVICE_LINE,
+           destination.VP,
+           destination.FTE_TREND,
+           destination.DEPARTMENT_BREAKDOWN)
+   VALUES (source.DEFINITION_NAME,
+           source.KEY_VOLUME,
+           source.LEGACY_COST_CENTER,
+           source.COST_CENTER_DESCRIPTION,
+           source.SITE,
+           source.CORPORATE_SERVICE_LINE,
+           source.VP,
+           source.FTE_TREND,
+           source.DEPARTMENT_BREAKDOWN);"
+) 
+
+# establish connection to OAO Development
+con <- dbConnect(odbc(), prod_dsn)
+
+# execute mapping table merge statements
+dbBegin(con)
+  # execute statements and if there is an error  with one of them rollback changes
+  tryCatch({
+    dbExecute(con, jobcode_merge)
+    print("LPM_MAPPING_JOBCODE has been merged")
+    dbExecute(con, paycode_merge)
+    print("LPM_MAPPING_PAYCODE has been merged")
+    dbExecute(con, paycycle_merge)
+    print("LPM_MAPPING_PAYCYCLE has been merged")
+    dbExecute(con, repdef_merge)
+    print("LPM_MAPPING_REPDEF has been merged")
+    dbCommit(con)
+    dbDisconnect(con)
+    print("Mapping tables successfully merged")
+  }, 
+  error = function(err){
+    dbRollback(con)
+    dbDisconnect(con)
+    print("Error")
+  }
+  )
+```
+
+### Update MSHQ Data Tables
+```{r Update MSHQ Oracle Data Tables , echo=FALSE}
+# establish connection to OAO Development
+con_prod <- dbConnect(odbc(), prod_dsn)
+con_dev <- dbConnect(odbc(), dsn)
+
+# identify what files are present in dev schema and not production
+mshq_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
+                          select(FILE_NAME) %>%
+                          distinct() %>%
+                          collect() %>%
+                          pull(),
+                        tbl(con_prod, "LPM_DATA_MSHQ_ORACLE") %>%
+                          select(FILE_NAME) %>%
+                          distinct() %>%
+                          collect() %>%
+                          pull())
+
+if (length(mshq_inserts_diff) > 0) {
+  # prepare the insert df based on files not present in prod
+  mshq_insert_df <- tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
+    filter(FILE_NAME %in% mshq_inserts_diff) %>%
+    collect() %>%
+    mutate(POSITION_CODE = replace_na(POSITION_CODE, ""),
+           POSITION_CODE_DESCRIPTION = replace_na(POSITION_CODE_DESCRIPTION, ""),
+           LOCATION_DESCRIPTION = replace_na(LOCATION_DESCRIPTION, ""),
+           REVERSE_MAP_HOME = replace_na(REVERSE_MAP_HOME, ""),
+           REVERSE_MAP_WORKED = replace_na(REVERSE_MAP_WORKED, ""),
+           HOME_DEPARTMENT_NAME = gsub("\'", "''", HOME_DEPARTMENT_NAME),
+           WORKED_DEPARTMENT_NAME = gsub("\'", "''", WORKED_DEPARTMENT_NAME),
+           POSITION_CODE_DESCRIPTION = gsub("\'", "''", POSITION_CODE_DESCRIPTION),
+           EMPLOYEE_NAME = gsub("\'", "''", EMPLOYEE_NAME),
+           LOCATION_DESCRIPTION = gsub("\'", "''", LOCATION_DESCRIPTION)) %>%
+    mutate(across(everything(), as.character))
+  
+  # establish destination table
+  mshq_destination_table <- "LPM_DATA_MSHQ_ORACLE"
+  mshq_destination_schema <- "OAO_DEVELOPMENT"
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts <- 
+    lapply(
+      lapply(
+        lapply(split(mshq_insert_df, 
+                     1:nrow(mshq_insert_df)),
+               as.list),
+        as.character),
+      FUN = get_values, mshq_destination_schema, mshq_destination_table)
+  
+  # create batches of inserts for insert statements
+  chunk_length <- 250
+  split_queries <- split(inserts, ceiling(seq_along(inserts)/chunk_length))
+  
+  # append each batch of inserts to batch insert list
+  split_queries_values <- list()
+  for (i in 1:length(split_queries)) {
+    row <- glue_collapse(split_queries[[i]], sep = "\n\n")
+    values <- glue('INSERT ALL
+                 {row}
+                 SELECT 1 from DUAL;')
+    split_queries_values <- append(split_queries_values, values)
+  }
+  
+  # execute parallel inserts of 250 record chunks
+  registerDoParallel()
+  outputPar <- foreach(i = 1:length(split_queries_values), 
+                       .packages = c("DBI", "odbc")) %dopar% {
+                         con_prod <- dbConnect(odbc(), prod_dsn)
+                         tryCatch({
+                           dbBegin(con_prod)
+                           dbExecute(con_prod, split_queries_values[[i]])
+                           dbCommit(con_prod)
+                           dbDisconnect(con_prod)
+                         },
+                         error = function(err){
+                           print("error")
+                           dbRollback(con_prod)
+                           dbDisconnect(con_prod)
+                         })
+                       }
+  registerDoSEQ()
+  cat(paste(mshq_inserts_diff, "has been added to", mshq_destination_schema))
+} else {
+  cat(paste(mshq_destination_schema, "is already up to date"))
+}
+
+```
+
+### Update BISLR Data Tables
+```{r Update BISLR Oracle Data Tables , echo=FALSE}
+# establish connection to OAO Development
+con_prod <- dbConnect(odbc(), prod_dsn)
+con_dev <- dbConnect(odbc(), dsn)
+
+# identify what files are present in dev schema and not production
+bislr_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
+                          select(FILE_NAME) %>%
+                          distinct() %>%
+                          collect() %>%
+                          pull(),
+                        tbl(con_prod, "LPM_DATA_BISLR_ORACLE") %>%
+                          select(FILE_NAME) %>%
+                          distinct() %>%
+                          collect() %>%
+                          pull())
+
+if (length(bislr_inserts_diff) > 0) {
+  # prepare the insert df based on files not present in prod
+  bislr_insert_df <- tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
+    filter(FILE_NAME %in% bislr_inserts_diff) %>%
+    collect() %>%
+    mutate(POSITION_CODE = replace_na(POSITION_CODE, ""),
+           POSITION_CODE_DESCRIPTION = replace_na(POSITION_CODE_DESCRIPTION, ""),
+           LOCATION_DESCRIPTION = replace_na(LOCATION_DESCRIPTION, ""),
+           REVERSE_MAP_HOME = replace_na(REVERSE_MAP_HOME, ""),
+           REVERSE_MAP_WORKED = replace_na(REVERSE_MAP_WORKED, ""),
+           HOME_DEPARTMENT_NAME = gsub("\'", "''", HOME_DEPARTMENT_NAME),
+           WORKED_DEPARTMENT_NAME = gsub("\'", "''", WORKED_DEPARTMENT_NAME),
+           POSITION_CODE_DESCRIPTION = gsub("\'", "''", POSITION_CODE_DESCRIPTION),
+           EMPLOYEE_NAME = gsub("\'", "''", EMPLOYEE_NAME),
+           LOCATION_DESCRIPTION = gsub("\'", "''", LOCATION_DESCRIPTION)) %>%
+    mutate(across(everything(), as.character))
+  
+  # establish destination table
+  bislr_destination_table <- "LPM_DATA_BISLR_ORACLE"
+  bislr_destination_schema <- "OAO_DEVELOPMENT"
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts <- 
+    lapply(
+      lapply(
+        lapply(split(bislr_insert_df, 
+                     1:nrow(bislr_insert_df)),
+               as.list),
+        as.character),
+      FUN = get_values, bislr_destination_schema, bislr_destination_table)
+  
+  # create batches of inserts for insert statements
+  chunk_length <- 250
+  split_queries <- split(inserts, ceiling(seq_along(inserts)/chunk_length))
+  
+  # append each batch of inserts to batch insert list
+  split_queries_values <- list()
+  for (i in 1:length(split_queries)) {
+    row <- glue_collapse(split_queries[[i]], sep = "\n\n")
+    values <- glue('INSERT ALL
+                 {row}
+                 SELECT 1 from DUAL;')
+    split_queries_values <- append(split_queries_values, values)
+  }
+  
+  # execute parallel inserts of 250 record chunks
+  registerDoParallel()
+  outputPar <- foreach(i = 1:length(split_queries_values), 
+                       .packages = c("DBI", "odbc")) %dopar% {
+                         con_prod <- dbConnect(odbc(), prod_dsn)
+                         tryCatch({
+                           dbBegin(con_prod)
+                           dbExecute(con_prod, split_queries_values[[i]])
+                           dbCommit(con_prod)
+                           dbDisconnect(con_prod)
+                         },
+                         error = function(err){
+                           print("error")
+                           dbRollback(con_prod)
+                           dbDisconnect(con_prod)
+                         })
+                       }
+  registerDoSEQ()
+  cat(paste(bislr_inserts_diff, "has been added to", bislr_destination_schema))
+} else {
+  cat(paste(bislr_destination_schema, "is already up to date"))
+}
+
 ```
