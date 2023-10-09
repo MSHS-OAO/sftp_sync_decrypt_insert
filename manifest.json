@@ -387,6 +387,27 @@
         "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 15:59:52 UTC; unix"
       }
     },
+    "codetools": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "codetools",
+        "Version": "0.2-19",
+        "Priority": "recommended",
+        "Author": "Luke Tierney <luke-tierney@uiowa.edu>",
+        "Description": "Code analysis tools for R.",
+        "Title": "Code Analysis Tools for R",
+        "Depends": "R (>= 2.1)",
+        "Maintainer": "Luke Tierney <luke-tierney@uiowa.edu>",
+        "URL": "https://gitlab.com/luke-tierney/codetools",
+        "License": "GPL",
+        "NeedsCompilation": "no",
+        "Packaged": "2023-01-31 19:16:51 UTC; luke",
+        "Repository": "CRAN",
+        "Date/Publication": "2023-02-01 13:21:59 UTC",
+        "Built": "R 4.2.3; ; 2023-03-15 09:07:54 UTC; unix"
+      }
+    },
     "colorspace": {
       "Source": "CRAN",
       "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
@@ -555,6 +576,31 @@
         "Repository": "CRAN",
         "Date/Publication": "2022-12-11 07:40:02 UTC",
         "Built": "R 4.2.3; x86_64-pc-linux-gnu; 2023-04-26 16:08:39 UTC; unix"
+      }
+    },
+    "doParallel": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "doParallel",
+        "Type": "Package",
+        "Title": "Foreach Parallel Adaptor for the 'parallel' Package",
+        "Version": "1.0.17",
+        "Authors@R": "c(person(\"Folashade\", \"Daniel\", role=\"cre\", email=\"fdaniel@microsoft.com\"),\n             person(\"Microsoft\", \"Corporation\", role=c(\"aut\", \"cph\")),\n             person(\"Steve\", \"Weston\", role=\"aut\"),\n             person(\"Dan\", \"Tenenbaum\", role=\"ctb\"))",
+        "Description": "Provides a parallel backend for the %dopar% function using\n        the parallel package.",
+        "Depends": "R (>= 2.14.0), foreach (>= 1.2.0), iterators (>= 1.0.0),\nparallel, utils",
+        "Suggests": "caret, mlbench, rpart, RUnit",
+        "Enhances": "compiler",
+        "License": "GPL-2",
+        "URL": "https://github.com/RevolutionAnalytics/doparallel",
+        "BugReports": "https://github.com/RevolutionAnalytics/doparallel/issues",
+        "NeedsCompilation": "no",
+        "Packaged": "2022-01-16 17:54:13 UTC; folashade",
+        "Author": "Folashade Daniel [cre],\n  Microsoft Corporation [aut, cph],\n  Steve Weston [aut],\n  Dan Tenenbaum [ctb]",
+        "Maintainer": "Folashade Daniel <fdaniel@microsoft.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2022-02-07 12:50:02 UTC",
+        "Built": "R 4.2.1; ; 2023-05-10 14:07:26 UTC; unix"
       }
     },
     "dplyr": {
@@ -747,6 +793,34 @@
         "Repository": "CRAN",
         "Date/Publication": "2023-04-18 20:30:02 UTC",
         "Built": "R 4.2.3; ; 2023-04-26 16:11:25 UTC; unix"
+      }
+    },
+    "foreach": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "foreach",
+        "Type": "Package",
+        "Title": "Provides Foreach Looping Construct",
+        "Version": "1.5.2",
+        "Authors@R": "c(person(\"Folashade\", \"Daniel\", role=\"cre\", email=\"fdaniel@microsoft.com\"),\n             person(\"Hong\", \"Ooi\", role=\"ctb\"),\n             person(\"Rich\", \"Calaway\", role=\"ctb\"),\n             person(\"Microsoft\", role=c(\"aut\", \"cph\")),\n             person(\"Steve\", \"Weston\", role=\"aut\"))",
+        "Description": "Support for the foreach looping construct.  Foreach is an\n        idiom that allows for iterating over elements in a collection,\n        without the use of an explicit loop counter.  This package in\n        particular is intended to be used for its return value, rather\n        than for its side effects.  In that sense, it is similar to the\n        standard lapply function, but doesn't require the evaluation\n        of a function.  Using foreach without side effects also\n        facilitates executing the loop in parallel.",
+        "License": "Apache License (== 2.0)",
+        "URL": "https://github.com/RevolutionAnalytics/foreach",
+        "BugReports": "https://github.com/RevolutionAnalytics/foreach/issues",
+        "Depends": "R (>= 2.5.0)",
+        "Imports": "codetools, utils, iterators",
+        "Suggests": "randomForest, doMC, doParallel, testthat, knitr, rmarkdown",
+        "VignetteBuilder": "knitr",
+        "RoxygenNote": "7.1.1",
+        "Collate": "'callCombine.R' 'foreach.R' 'do.R' 'foreach-ext.R'\n'foreach-pkg.R' 'getDoPar.R' 'getDoSeq.R' 'getsyms.R' 'iter.R'\n'nextElem.R' 'onLoad.R' 'setDoPar.R' 'setDoSeq.R' 'times.R'\n'utils.R'",
+        "NeedsCompilation": "no",
+        "Packaged": "2022-01-11 04:21:12 UTC; fdaniel",
+        "Author": "Folashade Daniel [cre],\n  Hong Ooi [ctb],\n  Rich Calaway [ctb],\n  Microsoft [aut, cph],\n  Steve Weston [aut]",
+        "Maintainer": "Folashade Daniel <fdaniel@microsoft.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2022-02-02 09:20:02 UTC",
+        "Built": "R 4.2.1; ; 2023-05-10 14:07:22 UTC; unix"
       }
     },
     "fs": {
@@ -954,6 +1028,29 @@
         "Repository": "CRAN",
         "Date/Publication": "2023-02-24 08:42:39 UTC",
         "Built": "R 4.2.3; ; 2023-04-26 16:11:56 UTC; unix"
+      }
+    },
+    "iterators": {
+      "Source": "CRAN",
+      "Repository": "https://hso-packagemanager.mssm.edu/prod-cran/__linux__/focal/2023-04-14",
+      "description": {
+        "Package": "iterators",
+        "Type": "Package",
+        "Title": "Provides Iterator Construct",
+        "Version": "1.0.14",
+        "Authors@R": "c(person(\"Folashade\", \"Daniel\", role=\"cre\", email=\"fdaniel@microsoft.com\"),\n             person(\"Revolution\", \"Analytics\", role=c(\"aut\", \"cph\")),\n             person(\"Steve\", \"Weston\", role=\"aut\"))",
+        "Description": "Support for iterators, which allow a programmer to traverse\n    through all the elements of a vector, list, or other collection of data.",
+        "URL": "https://github.com/RevolutionAnalytics/iterators",
+        "Depends": "R (>= 2.5.0), utils",
+        "Suggests": "RUnit, foreach",
+        "License": "Apache License (== 2.0)",
+        "NeedsCompilation": "no",
+        "Packaged": "2022-01-16 18:19:31 UTC; folashade",
+        "Author": "Folashade Daniel [cre],\n  Revolution Analytics [aut, cph],\n  Steve Weston [aut]",
+        "Maintainer": "Folashade Daniel <fdaniel@microsoft.com>",
+        "Repository": "CRAN",
+        "Date/Publication": "2022-02-05 00:50:08 UTC",
+        "Built": "R 4.2.1; ; 2023-05-10 14:07:24 UTC; unix"
       }
     },
     "jquerylib": {
@@ -2270,7 +2367,7 @@
   },
   "files": {
     ".RData": {
-      "checksum": "375b036ed0bba0915144b9a7b7637894"
+      "checksum": "5bdce47f6454109035cf1d95ab01d277"
     },
     "MSH_ALLINTERNAL_OB_PRIVATE.asc": {
       "checksum": "8dfeb201703f2509259e249d705c0d00"
@@ -2281,14 +2378,8 @@
     "README.md": {
       "checksum": "6cf30d8ac73903e4aa8ccfe2c42c9796"
     },
-    "sftp_sync_decrypt_insert.html": {
-      "checksum": "8578251ff2da7130ba381c61e03b682e"
-    },
     "sftp_sync_decrypt_insert.Rmd": {
-      "checksum": "d8206efca1957e2836d41cc0aa32009e"
-    },
-    "sftp_sync_decrypt.html": {
-      "checksum": "b4862d4ddc253698e22f9cc4b04a72cd"
+      "checksum": "9ccce01c64f453a58f8be79729f686d8"
     },
     "sync_to_network.lftp": {
       "checksum": "49d6ec69f55f977797afe83127eb76e6"
