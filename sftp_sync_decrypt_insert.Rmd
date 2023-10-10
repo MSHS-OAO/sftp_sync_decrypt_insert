@@ -959,6 +959,10 @@ dbBegin(con)
 con_prod <- dbConnect(odbc(), prod_dsn)
 con_dev <- dbConnect(odbc(), dsn)
 
+# establish destination table
+mshq_destination_table <- "LPM_DATA_MSHQ_ORACLE"
+mshq_destination_schema <- "OAO_DEVELOPMENT"
+
 # identify what files are present in dev schema and not production
 mshq_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
                           select(FILE_NAME) %>%
@@ -987,10 +991,6 @@ if (length(mshq_inserts_diff) > 0) {
            EMPLOYEE_NAME = gsub("\'", "''", EMPLOYEE_NAME),
            LOCATION_DESCRIPTION = gsub("\'", "''", LOCATION_DESCRIPTION)) %>%
     mutate(across(everything(), as.character))
-  
-  # establish destination table
-  mshq_destination_table <- "LPM_DATA_MSHQ_ORACLE"
-  mshq_destination_schema <- "OAO_DEVELOPMENT"
   
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts <- 
@@ -1047,6 +1047,10 @@ if (length(mshq_inserts_diff) > 0) {
 con_prod <- dbConnect(odbc(), prod_dsn)
 con_dev <- dbConnect(odbc(), dsn)
 
+# establish destination table
+bislr_destination_table <- "LPM_DATA_BISLR_ORACLE"
+bislr_destination_schema <- "OAO_DEVELOPMENT"
+
 # identify what files are present in dev schema and not production
 bislr_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
                           select(FILE_NAME) %>%
@@ -1075,10 +1079,6 @@ if (length(bislr_inserts_diff) > 0) {
            EMPLOYEE_NAME = gsub("\'", "''", EMPLOYEE_NAME),
            LOCATION_DESCRIPTION = gsub("\'", "''", LOCATION_DESCRIPTION)) %>%
     mutate(across(everything(), as.character))
-  
-  # establish destination table
-  bislr_destination_table <- "LPM_DATA_BISLR_ORACLE"
-  bislr_destination_schema <- "OAO_DEVELOPMENT"
   
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts <- 
