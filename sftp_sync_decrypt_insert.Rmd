@@ -147,7 +147,7 @@ new_files <- setdiff(c(mshq_raw_files_new, bislr_raw_files_new),
 if (length(new_files) > 0) {
   cat(cat(paste0(new_files, "\n")), "have been added to the network drive", fill = TRUE)
 } else {
-  print("Network drive is already up to date")
+  cat("Network drive is already up to date")
 }
 
 # add any new files to the mshq dates files
@@ -213,9 +213,9 @@ decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_
 # print new files that were decrypted
 new_files <- setdiff(decrypt_files_new, decrypt_files)
 if (length(new_files) > 0) {
-  print(paste(new_files, "has been decrypted"))
+  cat(paste(new_files, "has been decrypted"))
 } else {
-  print("No new MSHQ files to decrypt")
+  cat("No new MSHQ files to decrypt")
 }
 
 # add any new files to the mshq dates files
@@ -259,9 +259,9 @@ decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp
 # print new files that were decrypted
 new_files <- setdiff(decrypt_files_new, decrypt_files)
 if (length(new_files) > 0) {
-  print(paste(new_files, "has been decrypted"))
+  cat(paste(new_files, "has been decrypted"))
 } else {
-  print("No new BISLR files to decrypt")
+  cat("No new BISLR files to decrypt")
 }
 
 # add any new files to the mshq dates files
@@ -363,7 +363,7 @@ write_xlsx(mshq_dates, paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
 if (length(new_inserts) > 0) {
   cat(cat(paste0(new_inserts, "\n")), "has been added to the Insert folder", fill = TRUE)
 } else {
-  print("Insert files are already up to date")
+  cat("Insert files are already up to date")
 }
 
 # list files that need START_DATE and END_DATE values
@@ -374,7 +374,7 @@ if (nrow(mshq_dates_new) > 0) {
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
 } else {
-  print("MSHQ_File_Dates.xlsx is up to date")
+  cat("MSHQ_File_Dates.xlsx is up to date")
 }
 
 print("mshq_insert successful")
@@ -495,7 +495,7 @@ write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 if (length(new_inserts) > 0) {
   cat(cat(paste0(new_inserts, "\n")), "has been added to the Insert folder", fill = TRUE)
 } else {
-  print("Insert files are already up to date")
+  cat("Insert files are already up to date")
 }
 
 # list files that need START_DATE and END_DATE values
@@ -506,7 +506,7 @@ if (nrow(bislr_dates_new) > 0) {
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
 } else {
-  print("BISLR_File_Dates.xlsx is up to date")
+  cat("BISLR_File_Dates.xlsx is up to date")
 }
 
 print("bislr_insert successful")
@@ -565,12 +565,12 @@ bislr_check <- do.call("rbind", bislr_check)
 
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(mshq_check)) {
-  print("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
+  cat("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((mshq_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull()))) == 0){
-  print("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
+  cat("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at MSHQ
   new_mshq_jobcodes <- mshq_check %>%
@@ -601,12 +601,12 @@ if (is.null(mshq_check)) {
 
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(bislr_check)) {
-  print("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
+  cat("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((bislr_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'BISLR') %>% select(JOBCODE) %>% pull()))) == 0){
-  print("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
+  cat("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
   # create data frame for new jobcodes at BISLR
   new_bislr_jobcodes <- bislr_check %>%
@@ -702,9 +702,9 @@ if (!is.null(new_paycodes)) {
 }
 
 if(is.null(new_paycodes)) {
-  print("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
+  cat("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
 } else if (nrow(new_paycodes) == 0) {
-  print("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
+  cat("MSHS Paycodes are up to date in LPM_MAPPING_PAYCODE")
 } else {
   # save new paycodes df
   write_xlsx(new_paycodes, paste0(universal_dir, 
@@ -788,9 +788,9 @@ if (!is.null(new_paycycles)) {
 }
 
 if (is.null(new_paycycles)) {
-  print("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
+  cat("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
 } else if (nrow(new_paycycles) == 0) {
-  print("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
+  cat("MSHS End Dates are included in LPM_MAPPING_PAYCYCLE")
 } else {
   # save df of new paycycles
   write_xlsx(new_paycycles, paste0(universal_dir, 
@@ -980,7 +980,7 @@ for (i in 1:length(split_queries)) {
 dbBegin(con_prod)
 tryCatch({
   dbExecute(con_prod, repdef_truncate)
-  print("LPM_MAPPING_REPDEF has been truncated")
+  cat("LPM_MAPPING_REPDEF has been truncated")
   dbCommit(con_prod)
   dbDisconnect(con_prod)
   }, 
@@ -1008,7 +1008,7 @@ outputPar <- foreach(i = 1:length(split_queries_values),
                          })
                        }
 registerDoSEQ()
-print(paste(repdef_table, "has been updated"))
+cat(paste(repdef_table, "has been updated"))
 
 # execute mapping table merge statements
 con_prod <- dbConnect(odbc(), prod_dsn)
@@ -1016,11 +1016,11 @@ dbBegin(con_prod)
 # execute statements and if there is an error  with one of them rollback changes
 tryCatch({
   dbExecute(con_prod, jobcode_merge)
-  print("LPM_MAPPING_JOBCODE has been merged")
+  cat("LPM_MAPPING_JOBCODE has been merged")
   dbExecute(con_prod, paycode_merge)
-  print("LPM_MAPPING_PAYCODE has been merged")
+  cat("LPM_MAPPING_PAYCODE has been merged")
   dbExecute(con_prod, paycycle_merge)
-  print("LPM_MAPPING_PAYCYCLE has been merged")
+  cat("LPM_MAPPING_PAYCYCLE has been merged")
   dbCommit(con_prod)
   dbDisconnect(con_prod)
   }, 
