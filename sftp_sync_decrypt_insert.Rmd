@@ -931,7 +931,7 @@ repdef_truncate <- glue(
 )
 
 # get repdef table from source schema
-repdef_data <- tbl(con_prod, in_schema("OAO_DEVELOPMENT", "LPM_MAPPING_REPDEF")) %>%
+repdef_data <- tbl(con_dev, in_schema("OAO_DEVELOPMENT", "LPM_MAPPING_REPDEF")) %>%
   collect() %>%
   mutate(across(everything(), as.character)) %>%
   mutate(DEFINITION_CODE = replace_na(DEFINITION_CODE, ""),
