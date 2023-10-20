@@ -24,8 +24,8 @@ library(DBI)
 library(dbplyr)
 library(doParallel)
 
-dsn <- "OAO Cloud DB Greg"
-prod_dsn <- "OAO Cloud DB Staging"
+dev_dsn <- "OAO Cloud DB Staging"
+prod_dsn <- "OAO Cloud DB Production"
 
 # function to convert each record of df to insert statement
 get_values <- function(source_table, destination_schema, destination_table) {
@@ -519,17 +519,17 @@ print("bislr_insert successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # get set of unique files in MSHQ database
-mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
+mshq_db_files <- tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull
 
 # get set of unique files in BISLR database
-bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE") %>%
+bislr_db_files <- tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -544,7 +544,7 @@ mshq_new <- setdiff(mshq_inserts, mshq_db_files)
 bislr_new <- setdiff(bislr_inserts, bislr_db_files)
 
 # get all jobcodes in mapping file within database
-jobcodes <- tbl(con, "LPM_MAPPING_JOBCODE") %>%
+jobcodes <- tbl(con_dev, "LPM_MAPPING_JOBCODE") %>%
   select(JOBCODE, PAYROLL) %>%
   collect()
 
@@ -643,17 +643,17 @@ print("Jobcode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # Unique MSHQ files in database
-mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
+mshq_db_files <- tbl(con_dev, "LPM_DATA_MSHQ_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull()
   
 # Unique BISLR files in database
-bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE")%>%
+bislr_db_files <- tbl(con_dev, "LPM_DATA_BISLR_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -668,7 +668,7 @@ mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
 bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
 
 # Read mapping pay code
-mapping_paycode <- tbl(con, "LPM_MAPPING_PAYCODE") %>%
+mapping_paycode <- tbl(con_dev, "LPM_MAPPING_PAYCODE") %>%
                    select(PAYCODE_RAW) %>%
                    distinct() %>%
                    collect() %>%
@@ -727,17 +727,17 @@ print("Paycode check successful")
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # Unique MSHQ files in database
-mshq_db_files <- tbl(con, "LPM_DATA_MSHQ_ORACLE")%>%
+mshq_db_files <- tbl(con_dev, "LPM_DATA_MSHQ_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
   pull()
   
 # Unique BISLR files in database
-bislr_db_files <- tbl(con, "LPM_DATA_BISLR_ORACLE")%>%
+bislr_db_files <- tbl(con_dev, "LPM_DATA_BISLR_ORACLE")%>%
   select(FILE_NAME) %>%
   distinct() %>%
   collect() %>%
@@ -752,7 +752,7 @@ mshq_new <- setdiff(mshq_insert_files, mshq_db_files)
 bislr_new <- setdiff(bislr_insert_files, bislr_db_files)
 
 # Read mapping paycycle
-unique_dates <- tbl(con, "LPM_MAPPING_PAYCYCLE") %>%
+unique_dates <- tbl(con_dev, "LPM_MAPPING_PAYCYCLE") %>%
                     collect() %>%
                     select(PAYCYCLE_DATE) %>%
                     mutate(PAYCYCLE_DATE = as.Date(PAYCYCLE_DATE)) %>%
@@ -810,11 +810,11 @@ print("Paycycle check successful")
 #### Insert Check
 ```{r Insert Check, echo=FALSE}
 # establish connection to OAO oracle cloud db
-con <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # mshq check for inserts ready to be uploaded to OAO DB
 mshq_eligible_insert <- setdiff(mshq_inserts,
-          tbl(con, "LPM_DATA_MSHQ_ORACLE") %>%
+          tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
             select(FILE_NAME) %>%
             distinct() %>%
             collect() %>%
@@ -828,7 +828,7 @@ if (length(mshq_eligible_insert > 0)) {
 
 # bislr check for inserts ready to be uploaded to OAO DB
 bislr_eligible_insert <- setdiff(bislr_inserts,
-          tbl(con, "LPM_DATA_BISLR_ORACLE") %>%
+          tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
             select(FILE_NAME) %>%
             distinct() %>%
             collect() %>%
@@ -920,7 +920,7 @@ paycycle_merge <- glue(
 # truncate and insert code for LPM_MAPPING_REPDEF
 # establish destination table
 repdef_table <- "LPM_MAPPING_REPDEF"
-repdef_schema <- "OAO_DEVELOPMENT"
+repdef_schema <- "OAO_PRODUCTION"
 
 # establish connection to OAO Development
 con_prod <- dbConnect(odbc(), prod_dsn)
@@ -1036,11 +1036,11 @@ tryCatch({
 ```{r Update MSHQ Oracle Data Tables , echo=FALSE}
 # establish connection to OAO Development
 con_prod <- dbConnect(odbc(), prod_dsn)
-con_dev <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # establish destination table
 mshq_destination_table <- "LPM_DATA_MSHQ_ORACLE"
-mshq_destination_schema <- "OAO_DEVELOPMENT"
+mshq_destination_schema <- "OAO_PRODUCTION"
 
 # identify what files are present in dev schema and not production
 mshq_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_MSHQ_ORACLE") %>%
@@ -1124,11 +1124,11 @@ if (length(mshq_inserts_diff) > 0) {
 ```{r Update BISLR Oracle Data Tables , echo=FALSE}
 # establish connection to OAO Development
 con_prod <- dbConnect(odbc(), prod_dsn)
-con_dev <- dbConnect(odbc(), dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # establish destination table
 bislr_destination_table <- "LPM_DATA_BISLR_ORACLE"
-bislr_destination_schema <- "OAO_DEVELOPMENT"
+bislr_destination_schema <- "OAO_PRODUCTION"
 
 # identify what files are present in dev schema and not production
 bislr_inserts_diff <- setdiff(tbl(con_dev, "LPM_DATA_BISLR_ORACLE") %>%
