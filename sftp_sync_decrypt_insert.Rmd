@@ -923,7 +923,7 @@ repdef_table <- "LPM_MAPPING_REPDEF"
 repdef_schema <- "OAO_PRODUCTION"
 
 # establish connection to OAO Development
-con_prod <- dbConnect(odbc(), prod_dsn)
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # truncate query
 repdef_truncate <- glue(
@@ -974,6 +974,7 @@ for (i in 1:length(split_queries)) {
 }
 
 # truncate destination table before insert
+con_prod <- dbConnect(odbc(), prod_dsn)
 dbBegin(con_prod)
 tryCatch({
   dbExecute(con_prod, repdef_truncate)
@@ -1013,11 +1014,11 @@ dbBegin(con_prod)
 # execute statements and if there is an error  with one of them rollback changes
 tryCatch({
   dbExecute(con_prod, jobcode_merge)
-  cat("LPM_MAPPING_JOBCODE has been merged")
+  print("LPM_MAPPING_JOBCODE has been merged")
   dbExecute(con_prod, paycode_merge)
-  cat("LPM_MAPPING_PAYCODE has been merged")
+  print("LPM_MAPPING_PAYCODE has been merged")
   dbExecute(con_prod, paycycle_merge)
-  cat("LPM_MAPPING_PAYCYCLE has been merged")
+  print("LPM_MAPPING_PAYCYCLE has been merged")
   dbCommit(con_prod)
   dbDisconnect(con_prod)
   }, 
