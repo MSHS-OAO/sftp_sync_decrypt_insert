@@ -992,6 +992,7 @@ if (nrow(filter(bislr_end_date_check, THRESHOLD > 1.5 | THRESHOLD < 0.5)) > 0) {
     print("All BISLR end dates have hours within threshold")
 }
 
+print("End Date check successful")
 ```
 
 # Merge Schemas
