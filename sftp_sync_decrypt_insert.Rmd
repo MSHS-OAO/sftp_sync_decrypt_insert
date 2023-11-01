@@ -838,6 +838,160 @@ if (length(bislr_eligible_insert > 0)) {
 } else {
   cat("LPM_DATA_BISLR_ORACLE is up to date")
 }
+
+print("Insert check successful")
+```
+
+#### End Date Check
+```{r End Date Check, echo=FALSE}
+# establish DB connection
+con_prod <- dbConnect(odbc(), prod_dsn)
+
+# set constants for first end date of each data table
+mshq_first_end_date <- as.Date("2020-09-26")
+bislr_first_end_date <- as.Date("2021-03-13")
+
+#set constants for threshold check
+mshq_weekly <- 450000
+mshq_biweekly <- 1400000
+bislr_weekly <- 280000
+bislr_biweekly <- 600000
+
+# get max end date for each data table
+mshq_max_end_date <- as.Date(max(tbl(con_prod, "LPM_DATA_MSHQ_ORACLE") %>%
+  select(END_DATE) %>%
+  distinct() %>%
+  collect() %>%
+  pull()))
+
+bislr_max_end_date <- as.Date(max(tbl(con_prod, "LPM_DATA_BISLR_ORACLE") %>%
+  select(END_DATE) %>%
+  distinct() %>%
+  collect() %>%
+  pull()))
+
+# set up end date df for MSHQ check
+mshq_end_dates <- setNames(data.frame(matrix(ncol = 1, nrow = 0)), c("END_DATE"))
+mshq_end_dates <- mshq_end_dates %>% mutate(END_DATE = as.Date(END_DATE))
+i_mshq <- mshq_first_end_date
+while (i_mshq != mshq_max_end_date) {
+  r <- nrow(mshq_end_dates)
+  
+  mshq_end_dates[r + 1, 1] <- i_mshq
+  
+  i_mshq <- i_mshq + 7
+}
+
+# join mshq end dates with MSHQ data table to get hours for each end date
+mshq_end_date_check <- mshq_end_dates %>%
+  left_join(tbl(con_prod, "LPM_DATA_MSHQ_ORACLE") %>%
+              group_by(END_DATE) %>%
+              summarise(HOURS = sum(WD_HOURS, na.rm = TRUE)) %>%
+              collect(),
+            by = c("END_DATE" = "END_DATE")) %>%
+  arrange(END_DATE)
+
+# check for each end date to have hours
+if (nrow(filter(mshq_end_date_check, is.na(HOURS))) > 0) {
+  mshq_missing_dates <- filter(mshq_end_date_check, is.na(HOURS)) %>%
+    select(END_DATE) %>%
+    pull()
+  
+  print(paste(mshq_missing_dates, "do not have hours"))
+}
+
+# check that the hours total for each end date is within threshold
+mshq_end_date_check <- mshq_end_date_check %>%
+  mutate(EXPECTED = as.numeric(NA),
+         THRESHOLD = as.numeric(NA))
+for (i in 1:nrow(mshq_end_date_check)) {
+  if (i %% 2 == 1) {
+    mshq_end_date_check[i, "EXPECTED"] <- mshq_biweekly
+    mshq_end_date_check[i, "THRESHOLD"] <- 
+      mshq_end_date_check[i, "HOURS"] / mshq_biweekly
+  } else {
+    mshq_end_date_check[i, "EXPECTED"] <- mshq_weekly
+    mshq_end_date_check[i, "THRESHOLD"] <- 
+      mshq_end_date_check[i, "HOURS"] / mshq_weekly
+  }
+}
+
+if (nrow(filter(mshq_end_date_check, THRESHOLD > 1.5 | THRESHOLD < 0.5)) > 0) {
+  
+  mshq_threshold_error <- mshq_end_date_check %>%
+    filter(THRESHOLD > 1.5 | THRESHOLD < 0.5)
+  
+  # print end dates outside of threshold
+  kable(mshq_threshold_error, 
+        caption = "The following MSHQ end dates have hours outside the threshold") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+  } else {
+    print("All MSHQ end dates have hours within threshold")
+}
+
+# set up end date df for MSHQ check
+bislr_end_dates <- setNames(data.frame(matrix(ncol = 1, nrow = 0)), c("END_DATE"))
+bislr_end_dates <- bislr_end_dates %>% mutate(END_DATE = as.Date(END_DATE))
+i_bislr <- bislr_first_end_date
+while (i_bislr != bislr_max_end_date) {
+  r <- nrow(bislr_end_dates)
+  
+  bislr_end_dates[r + 1, 1] <- i_bislr
+  
+  i_bislr <- i_bislr + 7
+}
+
+# join bislr end dates with BISLR data table to get hours for each end date
+bislr_end_date_check <- bislr_end_dates %>%
+  left_join(tbl(con_prod, "LPM_DATA_BISLR_ORACLE") %>%
+              group_by(END_DATE) %>%
+              summarise(HOURS = sum(WD_HOURS, na.rm = TRUE)) %>%
+              collect(),
+            by = c("END_DATE" = "END_DATE")) %>%
+  arrange(END_DATE)
+
+# check for each end date to have hours
+if (nrow(filter(bislr_end_date_check, is.na(HOURS))) > 0) {
+  bislr_missing_dates <- filter(bislr_end_date_check, is.na(HOURS)) %>%
+    select(END_DATE) %>%
+    pull()
+  
+  print(paste(bislr_missing_dates, "do not have hours"))
+}
+
+# check that the hours total for each end date is within threshold
+bislr_end_date_check <- bislr_end_date_check %>%
+  mutate(EXPECTED = as.numeric(NA),
+         THRESHOLD = as.numeric(NA))
+for (i in 1:nrow(mshq_end_date_check)) {
+  if (i %% 2 == 1) {
+    bislr_end_date_check[i, "EXPECTED"] <- bislr_biweekly
+    bislr_end_date_check[i, "THRESHOLD"] <- 
+      bislr_end_date_check[i, "HOURS"] / bislr_biweekly
+  } else {
+    bislr_end_date_check[i, "EXPECTED"] <- bislr_weekly
+    bislr_end_date_check[i, "THRESHOLD"] <- 
+      bislr_end_date_check[i, "HOURS"] / bislr_weekly
+  }
+}
+
+if (nrow(filter(bislr_end_date_check, THRESHOLD > 1.5 | THRESHOLD < 0.5)) > 0) {
+  
+  bislr_threshold_error <- bislr_end_date_check %>%
+    filter(THRESHOLD > 1.5 | THRESHOLD < 0.5)
+  
+  # print end dates outside of threshold
+  kable(bislr_threshold_error, 
+        caption = "The following BISLR end dates have hours outside the threshold") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+  } else {
+    print("All BISLR end dates have hours within threshold")
+}
+
 ```
 
 # Merge Schemas
