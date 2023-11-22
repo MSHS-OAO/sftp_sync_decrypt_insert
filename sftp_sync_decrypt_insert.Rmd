@@ -119,6 +119,23 @@ get_values_repdef <- function(source_table, destination_schema, destination_tabl
   
   return(values)
 }
+
+get_values_dates <- function(source_table, destination_schema, destination_table) {
+  
+  RAW_FILE     <- source_table[1]
+  DECRYPT_FILE <- source_table[2]
+  INSERT_FILE  <- source_table[3]
+  RAW_MTIME    <- source_table[4]
+  START_DATE   <- source_table[5]
+  END_DATE     <- source_table[6]
+  
+  values <- glue("INTO {glue::double_quote(destination_schema)}.{glue::double_quote(destination_table)}
+                 (RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE)
+                 VALUES ('{RAW_FILE}', '{DECRYPT_FILE}', '{INSERT_FILE}', 
+                 TO_DATE('{RAW_MTIME}', 'yyyy-mm-dd hh24:mi:ss'), '{START_DATE}', '{END_DATE}')")
+  
+  return(values)
+}
 ```
 
 # SFTP Synchronization
@@ -126,9 +143,14 @@ get_values_repdef <- function(source_table, destination_schema, destination_tabl
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
+# establish connection to OAO oracle cloud db
+con_dev <- dbConnect(odbc(), dev_dsn)
+
 # get current MSHQ and BISLR file and date mapping file
-mshq_dates <- read_excel(paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
-bislr_dates <- read_excel(paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
+mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
+  collect()
+bislr_dates <- tbl(con_dev, "LPM_FILE_DATES_BISLR") %>%
+  collect()
 
 # get files currently in network directory
 mshq_raw_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"))
@@ -153,24 +175,86 @@ if (length(new_files) > 0) {
 # add any new files to the mshq dates files
 mshq_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"), 
                                        full.names = T))
-mshq_raw_files_info <- data.frame(RAW = basename(rownames(mshq_raw_files_info)),
+mshq_raw_files_info <- data.frame(RAW_FILE = basename(rownames(mshq_raw_files_info)),
                                   RAW_MTIME = mshq_raw_files_info$mtime)
 mshq_dates <- mshq_raw_files_info %>%
-  left_join(mshq_dates, by = join_by(RAW, RAW_MTIME)) %>%
-  select(RAW, DECRYPT, INSERT, RAW_MTIME, START_DATE, END_DATE) %>%
-  arrange(RAW_MTIME)
-write_xlsx(mshq_dates, paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
+  left_join(mshq_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
+  select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
+  arrange(RAW_MTIME) %>%
+  mutate(RAW_MTIME = as.character(RAW_MTIME))
 
 # add any new files to the bislr dates files
 bislr_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"), 
                                        full.names = T))
-bislr_raw_files_info <- data.frame(RAW = basename(rownames(bislr_raw_files_info)),
+bislr_raw_files_info <- data.frame(RAW_FILE = basename(rownames(bislr_raw_files_info)),
                                   RAW_MTIME = bislr_raw_files_info$mtime)
 bislr_dates <- bislr_raw_files_info %>%
-  left_join(bislr_dates, by = join_by(RAW, RAW_MTIME)) %>%
-  select(RAW, DECRYPT, INSERT, RAW_MTIME, START_DATE, END_DATE) %>%
-  arrange(RAW_MTIME)
-write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
+  left_join(bislr_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
+  select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
+  arrange(RAW_MTIME) %>%
+  mutate(RAW_MTIME = as.character(RAW_MTIME))
+
+# update DB if new files were synced
+if (length(new_files) > 0) {
+  # send new dates files to DB
+  dates_schema <- "OAO_DEVELOPMENT"
+  dates_table_mshq <- "LPM_FILE_DATES_MSHQ"
+  dates_table_bislr <- "LPM_FILE_DATES_BISLR"
+  
+  # truncate query
+  dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
+  dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts_dates_mshq <- 
+    lapply(
+      lapply(
+        lapply(split(mshq_dates, 
+                     1:nrow(mshq_dates)),
+               as.list),
+        as.character),
+      FUN = get_values_dates, dates_schema, dates_table_mshq)
+  
+  inserts_dates_bislr <- 
+    lapply(
+      lapply(
+        lapply(split(bislr_dates, 
+                     1:nrow(bislr_dates)),
+               as.list),
+        as.character),
+      FUN = get_values_dates, dates_schema, dates_table_bislr)
+  
+  # colapse list elements into indvidual insert statements
+  values_dates_mshq <- glue_collapse(inserts_dates_mshq, sep = "\n\n")
+  values_dates_bislr <- glue_collapse(inserts_dates_bislr, sep = "\n\n")
+  
+  # combine all insert statements into an insert all statement
+  all_data_mshq_dates <- glue('INSERT ALL
+                        {values_dates_mshq}
+                      SELECT 1 from DUAL;')
+  all_data_bislr_dates <- glue('INSERT ALL
+                        {values_dates_bislr}
+                      SELECT 1 from DUAL;')
+  
+  # truncate destination tables before inserts
+  con_dev <- dbConnect(odbc(), dev_dsn)
+  dbBegin(con_dev)
+  tryCatch({
+    dbExecute(con_dev, dates_truncate_mshq)
+    dbExecute(con_dev, dates_truncate_bislr)
+    dbExecute(con_dev, all_data_mshq_dates)
+    dbExecute(con_dev, all_data_bislr_dates)
+    dbCommit(con_dev)
+    dbDisconnect(con_dev)
+    print("File Dates tables have been updated")
+  }, 
+  error = function(err){
+    dbRollback(con_dev)
+    dbDisconnect(con_dev)
+    print("Error")
+  }
+  )
+}
 
 print("sftp_sync successful")
 ```
@@ -187,16 +271,18 @@ print("import_key successful")
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
-# get current MSHQ and file and date mapping file
-mshq_dates <- read_excel(paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
+# get current MSHQ date file
+con_dev <- dbConnect(odbc(), dev_dsn)
+mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
+  collect()
 
 # list files in the raw and decryption directories
 decrypt_files <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Decrypt/"))
 
 # list files that need to be decrypted
 files_to_decrypt <- mshq_dates %>%
-  filter(!(gsub(".out", "", RAW) %in% decrypt_files)) %>%
-  select(RAW) %>%
+  filter(!(gsub(".out", "", RAW_FILE) %in% decrypt_files)) %>%
+  select(RAW_FILE) %>%
   pull()
   
 # decrypt each file in raw folder and not in the decrypted folder
@@ -214,16 +300,58 @@ decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_
 new_files <- setdiff(decrypt_files_new, decrypt_files)
 if (length(new_files) > 0) {
   cat(paste(new_files, "has been decrypted"))
+  
+  # add any new files to the mshq dates files
+  mshq_dates <- mshq_dates %>%
+    mutate(DECRYPT_FILE = case_when(
+      is.na(DECRYPT_FILE) ~ gsub(".out", "", RAW_FILE),
+      TRUE ~ DECRYPT_FILE)) %>%
+    mutate(RAW_MTIME = as.character(RAW_MTIME))
+  
+  # send new dates files to DB
+  dates_schema <- "OAO_DEVELOPMENT"
+  dates_table_mshq <- "LPM_FILE_DATES_MSHQ"
+  
+  # truncate query
+  dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts_dates_mshq <- 
+    lapply(
+      lapply(
+        lapply(split(mshq_dates, 
+                     1:nrow(mshq_dates)),
+               as.list),
+        as.character),
+      FUN = get_values_dates, dates_schema, dates_table_mshq)
+  
+  # colapse list elements into indvidual insert statements
+  values_dates_mshq <- glue_collapse(inserts_dates_mshq, sep = "\n\n")
+  
+  # combine all insert statements into an insert all statement
+  all_data_mshq_dates <- glue('INSERT ALL
+                        {values_dates_mshq}
+                      SELECT 1 from DUAL;')
+  
+  # truncate destination tables before inserts
+  con_dev <- dbConnect(odbc(), dev_dsn)
+  dbBegin(con_dev)
+  tryCatch({
+    dbExecute(con_dev, dates_truncate_mshq)
+    dbExecute(con_dev, all_data_mshq_dates)
+    dbCommit(con_dev)
+    dbDisconnect(con_dev)
+    print("MSHQ File Dates table has been updated")
+  }, 
+  error = function(err){
+    dbRollback(con_dev)
+    dbDisconnect(con_dev)
+    print("Error")
+  }
+  )
 } else {
   cat("No new MSHQ files to decrypt")
 }
-
-# add any new files to the mshq dates files
-mshq_dates <- mshq_dates %>%
-  mutate(DECRYPT = case_when(
-    is.na(DECRYPT) ~ gsub(".out", "", RAW),
-    TRUE ~ DECRYPT))
-write_xlsx(mshq_dates, paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx"))
 
 print("mshq_decrypt successful")
 ```
@@ -233,16 +361,18 @@ print("mshq_decrypt successful")
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
-# get current MSHQ and BISLR file and date mapping file
-bislr_dates <- read_excel(paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
+# get current MSHQ date file
+con_dev <- dbConnect(odbc(), dev_dsn)
+bislr_dates <- tbl(con_dev, "LPM_FILE_DATES_BISLR") %>%
+  collect()
 
 # list files in the raw and decryption directories
 decrypt_files <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Decrypt/"))
 
 # list files that need to be decrypted
 files_to_decrypt <- bislr_dates %>%
-  filter(!(gsub(".out", "", RAW) %in% decrypt_files)) %>%
-  select(RAW) %>%
+  filter(!(gsub(".out", "", RAW_FILE) %in% decrypt_files)) %>%
+  select(RAW_FILE) %>%
   pull()
   
 # decrypt each file in raw folder and not in the decrypted folder
@@ -260,16 +390,58 @@ decrypt_files_new <- list.files(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp
 new_files <- setdiff(decrypt_files_new, decrypt_files)
 if (length(new_files) > 0) {
   cat(paste(new_files, "has been decrypted"))
+  
+  # add any new files to the mshq dates files
+  bislr_dates <- bislr_dates %>%
+    mutate(DECRYPT_FILE = case_when(
+      is.na(DECRYPT_FILE) ~ gsub(".out", "", RAW_FILE),
+      TRUE ~ DECRYPT_FILE)) %>%
+    mutate(RAW_MTIME = as.character(RAW_MTIME))
+  
+  # send new dates files to DB
+  dates_schema <- "OAO_DEVELOPMENT"
+  dates_table_bislr <- "LPM_FILE_DATES_BISLR"
+  
+  # truncate query
+  dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts_dates_bislr <- 
+    lapply(
+      lapply(
+        lapply(split(bislr_dates, 
+                     1:nrow(bislr_dates)),
+               as.list),
+        as.character),
+      FUN = get_values_dates, dates_schema, dates_table_bislr)
+  
+  # colapse list elements into indvidual insert statements
+  values_dates_bislr <- glue_collapse(inserts_dates_bislr, sep = "\n\n")
+  
+  # combine all insert statements into an insert all statement
+  all_data_bislr_dates <- glue('INSERT ALL
+                        {values_dates_bislr}
+                      SELECT 1 from DUAL;')
+  
+  # truncate destination tables before inserts
+  con_dev <- dbConnect(odbc(), dev_dsn)
+  dbBegin(con_dev)
+  tryCatch({
+    dbExecute(con_dev, dates_truncate_bislr)
+    dbExecute(con_dev, all_data_bislr_dates)
+    dbCommit(con_dev)
+    dbDisconnect(con_dev)
+    print("File Dates tables have been updated")
+  }, 
+  error = function(err){
+    dbRollback(con_dev)
+    dbDisconnect(con_dev)
+    print("Error")
+  }
+  )
 } else {
   cat("No new BISLR files to decrypt")
 }
-
-# add any new files to the mshq dates files
-bislr_dates <- bislr_dates %>%
-  mutate(DECRYPT = case_when(
-    is.na(DECRYPT) ~ gsub(".out", "", RAW),
-    TRUE ~ DECRYPT))
-write_xlsx(bislr_dates, paste0(universal_dir, "Mapping/BISLR_File_Dates.xlsx"))
 
 print("bislr_decrypt successful")
 ```
@@ -292,11 +464,14 @@ db_columns <- c("PARTNER", "HOME_FACILITY", "HOME_DEPARTMENT", "WORKED_FACILITY"
                 "REVERSE_MAP_WORKED", "REVERSE_MAP_HOME", "FILE_NAME")
 
 # read in mshq dates file 
-mshq_dates <- read_excel(paste0(universal_dir, "Mapping/MSHQ_File_Dates.xlsx")) %>%
-  mutate(INSERT = case_when(
+con_dev <- dbConnect(odbc(), dev_dsn)
+mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
+  collect() %>%
+  mutate(INSERT_FILE = case_when(
     START_DATE == "IGNORE" ~ "IGNORE",
     is.na(START_DATE) ~ NA,
-    TRUE ~ INSERT))
+    TRUE ~ INSERT_FILE))
+
 # get list of files that need dates/Ignore
 mshq_dates_new <- mshq_dates %>%
   filter(is.na(START_DATE))
@@ -307,21 +482,22 @@ insert_files <- list.files(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/
 # update mshq dates for files with newly added START_DATE and END_DATE values
 mshq_dates <- mshq_dates %>% 
   arrange(START_DATE) %>% 
-  mutate(INSERT = case_when(
-    is.na(INSERT) & !is.na(START_DATE) & START_DATE != "IGNORE" ~ paste0(row.names(.), "_", DECRYPT),
-    TRUE ~ INSERT)) %>%
+  mutate(INSERT_FILE = case_when(
+    is.na(INSERT_FILE) & !is.na(START_DATE) & START_DATE != "IGNORE" ~ paste0(row.names(.), "_", DECRYPT_FILE),
+    TRUE ~ INSERT_FILE)) %>%
   arrange(RAW_MTIME)
 
 # get list of files that now have date values but dont have an insert file
 new_inserts <- setdiff(mshq_dates %>% 
-                         filter(!is.na(INSERT) & START_DATE != "IGNORE") %>% 
-                         select(INSERT) %>% 
+                         filter(!is.na(INSERT_FILE) & START_DATE != "IGNORE") %>% 
+                         select(INSERT_FILE) %>% 
                          pull(),
                        insert_files)
+
 # list of files that need an insert file created
 create_inserts <- mshq_dates %>%
-  filter(INSERT %in% new_inserts) %>%
-  select(DECRYPT) %>%
+  filter(INSERT_FILE %in% new_inserts) %>%
+  select(DECRYPT_FILE) %>%
   pull()
 
 # create a new insert file for all decrypted files that need insert files
@@ -330,17 +506,17 @@ inserts <- lapply(create_inserts, function(x) {
                     sep = "~", header = T, stringsAsFactors = F,
                     colClasses = rep("character", 32), strip.white = TRUE) %>%
     mutate(FILENAME = mshq_dates %>%
-             filter(DECRYPT == x) %>%
-             select(INSERT) %>%
+             filter(DECRYPT_FILE == x) %>%
+             select(INSERT_FILE) %>%
              pull()) %>%
     mutate(Start.Date = format(as.Date(Start.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
            End.Date = format(as.Date(End.Date, format = "%m/%d/%Y"), "%Y-%m-%d"),
            Job.Code = case_when(
              Job.Code == "" ~ "UNKNOWN",
              TRUE ~ Job.Code)) %>%
-    filter(Start.Date >= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
+    filter(Start.Date >= as.Date(pull(filter(mshq_dates, DECRYPT_FILE == x) %>%
                                          select(START_DATE)), format = "%Y-%m-%d"),
-           End.Date <= as.Date(pull(filter(mshq_dates, DECRYPT == x) %>%
+           End.Date <= as.Date(pull(filter(mshq_dates, DECRYPT_FILE == x) %>%
                                       select(END_DATE)), format = "%Y-%m-%d"))
 })
 # apply column names of oracle db to all new insert files
@@ -350,8 +526,8 @@ names(inserts) <- create_inserts
 insert_function <- lapply(names(inserts), function(x) {
   write.table(inserts[[x]], paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Insert/",
                                    mshq_dates %>% 
-                                     filter(DECRYPT == x) %>%
-                                     select(INSERT) %>%
+                                     filter(DECRYPT_FILE == x) %>%
+                                     select(INSERT_FILE) %>%
                                      pull()),
               sep = "~", row.names = FALSE)
 })
@@ -373,8 +549,50 @@ if (nrow(mshq_dates_new) > 0) {
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
-} else {
-  cat("MSHQ_File_Dates.xlsx is up to date")
+} 
+
+if (length(new_inserts) > 0 | nrow(mshq_dates_new) > 0) {
+  # send new dates files to DB
+  dates_schema <- "OAO_DEVELOPMENT"
+  dates_table_mshq <- "LPM_FILE_DATES_MSHQ"
+  
+  # truncate query
+  dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
+  
+  # convert the each record/row of tibble to INTO clause of insert statment
+  inserts_dates_mshq <- 
+    lapply(
+      lapply(
+        lapply(split(mshq_dates, 
+                     1:nrow(mshq_dates)),
+               as.list),
+        as.character),
+      FUN = get_values_dates, dates_schema, dates_table_mshq)
+  
+  # colapse list elements into indvidual insert statements
+  values_dates_mshq <- glue_collapse(inserts_dates_mshq, sep = "\n\n")
+  
+  # combine all insert statements into an insert all statement
+  all_data_mshq_dates <- glue('INSERT ALL
+                        {values_dates_mshq}
+                      SELECT 1 from DUAL;')
+  
+  # truncate destination tables before inserts
+  con_dev <- dbConnect(odbc(), dev_dsn)
+  dbBegin(con_dev)
+  tryCatch({
+    dbExecute(con_dev, dates_truncate_mshq)
+    dbExecute(con_dev, all_data_mshq_dates)
+    dbCommit(con_dev)
+    dbDisconnect(con_dev)
+    print("MSHQ File Dates table has been updated")
+  }, 
+  error = function(err){
+    dbRollback(con_dev)
+    dbDisconnect(con_dev)
+    print("Error")
+  }
+  )
 }
 
 print("mshq_insert successful")
@@ -563,15 +781,21 @@ bislr_check <- lapply(bislr_new, function(x) {
 })
 bislr_check <- do.call("rbind", bislr_check)
 
+# save variable for insert checks. If jobcodes need to be resolved then we cant insert
+
+
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(mshq_check)) {
+  mshq_insert_check <- TRUE
   cat("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((mshq_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'MSHQ') %>% select(JOBCODE) %>% pull()))) == 0){
+  mshq_insert_check <- TRUE
   cat("MSHQ Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
+  mshq_insert_check <- FALSE
   # create data frame for new jobcodes at MSHQ
   new_mshq_jobcodes <- mshq_check %>%
     filter(!(JOBCODE %in% (jobcodes %>% 
@@ -601,13 +825,16 @@ if (is.null(mshq_check)) {
 
 # check jobcodes in new insert files with jobcode mapping file
 if (is.null(bislr_check)) {
+  bislr_insert_check <- TRUE
   cat("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else if (length(setdiff((bislr_check %>% 
                     select(JOBCODE) %>% pull()),
                    (jobcodes %>% 
                     filter(PAYROLL == 'BISLR') %>% select(JOBCODE) %>% pull()))) == 0){
+  bislr_insert_check <- TRUE
   cat("BISLR Jobcodes are up to date in LPM_MAPPING_JOBCODE")
 } else {
+  bislr_insert_check <- FALSE
   # create data frame for new jobcodes at BISLR
   new_bislr_jobcodes <- bislr_check %>%
     filter(!(JOBCODE %in% (jobcodes %>% 
@@ -819,7 +1046,7 @@ mshq_eligible_insert <- setdiff(mshq_inserts,
             distinct() %>%
             collect() %>%
             pull())
-if (length(mshq_eligible_insert > 0)) {
+if (length(mshq_eligible_insert) > 0 & mshq_insert_check == TRUE) {
   cat(paste0(mshq_eligible_insert, " is ready to be uploaded to the OAO DB"))
 } else {
   cat("LPM_DATA_MSHQ_ORACLE is up to date")
@@ -833,7 +1060,7 @@ bislr_eligible_insert <- setdiff(bislr_inserts,
             distinct() %>%
             collect() %>%
             pull())
-if (length(bislr_eligible_insert > 0)) {
+if (length(bislr_eligible_insert) > 0 & mshq_insert_check == TRUE) {
   cat(paste0(bislr_eligible_insert, " is ready to be uploaded to the OAO DB"))
 } else {
   cat("LPM_DATA_BISLR_ORACLE is up to date")
