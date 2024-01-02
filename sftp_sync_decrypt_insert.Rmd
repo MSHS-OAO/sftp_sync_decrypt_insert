@@ -1623,14 +1623,20 @@ if (length(bislr_inserts_diff) > 0) {
 } else {
   cat(paste(bislr_destination_schema, "is already up to date"))
 }
+```
+
+### Update File Dates Tables
+```{r Update File Dates Tables , echo=FALSE}
+# establish connection to OAO Development
+con_dev <- dbConnect(odbc(), dev_dsn)
 
 # add any new files to the mshq dates files
 mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
-  mutate(RAW_MTIME = as.character(RAW_MTIME)) %>%
-  collect()
+  collect() %>%
+  mutate(RAW_MTIME = as.character(RAW_MTIME)) 
 bislr_dates <- tbl(con_dev, "LPM_FILE_DATES_BISLR") %>%
-  mutate(RAW_MTIME = as.character(RAW_MTIME)) %>%
-  collect()
+  collect() %>%
+  mutate(RAW_MTIME = as.character(RAW_MTIME))
   
 # send new dates files to DB
 dates_schema <- "OAO_PRODUCTION"
