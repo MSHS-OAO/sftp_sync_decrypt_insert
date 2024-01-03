@@ -803,7 +803,7 @@ if (length(new_inserts) > 0 | nrow(bislr_dates_new) > 0) {
   
   # combine all insert statements into an insert all statement
   all_data_bislr_dates <- glue('INSERT ALL
-                        {values_dates_mshq}
+                        {values_dates_bislr}
                       SELECT 1 from DUAL;')
   
   # truncate destination tables before inserts
