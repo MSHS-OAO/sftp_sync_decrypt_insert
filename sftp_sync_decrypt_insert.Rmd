@@ -205,6 +205,25 @@ if (length(new_files) > 0) {
   dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
   dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
   
+  #replace NA
+  mshq_dates <- mshq_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
+
+  bislr_dates <- bislr_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
+  
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts_dates_mshq <- 
     lapply(
@@ -315,6 +334,16 @@ if (length(new_files) > 0) {
   # truncate query
   dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
   
+  # replace NA
+  mshq_dates <- mshq_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
+  
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts_dates_mshq <- 
     lapply(
@@ -404,6 +433,16 @@ if (length(new_files) > 0) {
   
   # truncate query
   dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+  
+  # replace NA
+  bislr_dates <- bislr_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
   
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts_dates_bislr <- 
@@ -555,6 +594,16 @@ if (length(new_inserts) > 0 | nrow(mshq_dates_new) > 0) {
   
   # truncate query
   dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
+  
+  #replace NA
+  mshq_dates <- mshq_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
   
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts_dates_mshq <- 
@@ -728,6 +777,16 @@ if (length(new_inserts) > 0 | nrow(bislr_dates_new) > 0) {
   
   # truncate query
   dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+  
+  #replace NA
+  bislr_dates <- bislr_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
   
   # convert the each record/row of tibble to INTO clause of insert statment
   inserts_dates_bislr <- 
@@ -1646,6 +1705,25 @@ dates_table_bislr <- "LPM_FILE_DATES_BISLR"
 # truncate query
 dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
 dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+
+#replace NA
+  mshq_dates <- mshq_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
+
+  bislr_dates <- bislr_dates %>%
+    mutate(across(everything(), as.character)) %>%
+    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+           INSERT_FILE = replace_na(INSERT_FILE, ""),
+           RAW_MTIME = replace_na(RAW_MTIME, ""),
+           START_DATE = replace_na(START_DATE, ""),
+           END_DATE = replace_na(END_DATE, ""))
 
 # convert the each record/row of tibble to INTO clause of insert statment
 inserts_dates_mshq <- 
