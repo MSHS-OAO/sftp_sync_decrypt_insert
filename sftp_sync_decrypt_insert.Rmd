@@ -1467,6 +1467,12 @@ tryCatch({
   print("LPM_MAPPING_PAYCODE has been merged")
   dbExecute(con_prod, paycycle_merge)
   print("LPM_MAPPING_PAYCYCLE has been merged")
+  dbExecute(con_prod, costcenter_merge)
+  print("LPM_MAPPING_COST_CENTER has been merged")
+  dbExecute(con_prod, repdef_merge)
+  print("LPM_MAPPING_REPDEF has been merged")
+  dbExecute(con_prod, keyvol_merge)
+  print("LPM_MAPPING_KEY_VOLUME has been merged")
   dbCommit(con_prod)
   dbDisconnect(con_prod)
   }, 
