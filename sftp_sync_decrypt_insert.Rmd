@@ -1396,9 +1396,6 @@ paycycle_merge <- glue(
            source.PREMIER_DISTRIBUTION);"
 ) 
 
-# start #########################################################################
-# new edits
-
 # merge statement for cost center mapping table
 costcenter_merge <- glue(
   "MERGE INTO LPM_TEST_MAPPING_COST_CENTER destination
@@ -1409,10 +1406,12 @@ costcenter_merge <- glue(
               destination.COST_CENTER_DESCRIPTION = source.COST_CENTER_DESCRIPTION,
               destination.DEFINITION_CODE = source.DEFINITION_CODE
    WHEN NOT MATCHED THEN
-   INSERT (destination.LEGACY_COST_CENTER,
+   INSERT (destination.ORACLE_COST_CENTER,
+           destination.LEGACY_COST_CENTER,
            destination.COST_CENTER_DESCRIPTION,
            destination.DEFINITION_CODE)
-   VALUES (source.LEGACY_COST_CENTER,
+   VALUES (source.ORACLE_COST_CENTER,
+           source.LEGACY_COST_CENTER,
            source.COST_CENTER_DESCRIPTION,
            source.DEFINITION_CODE);"
 )
@@ -1429,12 +1428,14 @@ repdef_merge <- glue(
               destination.VP = source.VP,
               destination.DEPARTMENT_BREAKDOWN = source.DEPARTMENT_BREAKDOWN
    WHEN NOT MATCHED THEN
-   INSERT (destination.DEFINITION_NAME,
+   INSERT (destination.DEFINITION_CODE,
+           destination.DEFINITION_NAME,
            destination.SITE,
            destination.CORPORATE_SERVICE_LINE,
            destination.VP,
            destination.DEPARTMENT_BREAKDOWN)
-   VALUES (source.DEFINITION_NAME,
+   VALUES (source.DEFINITION_CODE,
+           source.DEFINITION_NAME,
            source.SITE,
            source.CORPORATE_SERVICE_LINE,
            source.VP,
@@ -1450,11 +1451,13 @@ keyvol_merge <- glue(
    WHEN MATCHED THEN 
    UPDATE SET destination.CLOSED = source.CLOSED
    WHEN NOT MATCHED THEN
-   INSERT (destination.CLOSED)
-   VALUES (source.CLOSED);"
+   INSERT (destination.DEFINITION_CODE,
+           destination.KEY_VOLUME,
+           destination.CLOSED)
+   VALUES (source.DEFINITION_CODE,
+           source.KEY_VOLUME,
+           source.CLOSED);"
 )
-# end ###########################################################################
-
 
 # execute mapping table merge statements
 con_prod <- dbConnect(odbc(), prod_dsn)
