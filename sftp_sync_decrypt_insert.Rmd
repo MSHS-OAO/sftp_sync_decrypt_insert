@@ -1398,8 +1398,8 @@ paycycle_merge <- glue(
 
 # merge statement for cost center mapping table
 costcenter_merge <- glue(
-  "MERGE INTO LPM_TEST_MAPPING_COST_CENTER destination
-   USING OAO_DEVELOPMENT.LPM_TEST_MAPPING_COST_CENTER source
+  "MERGE INTO LPM_MAPPING_COST_CENTER destination
+   USING OAO_DEVELOPMENT.LPM_MAPPING_COST_CENTER source
    ON (destination.ORACLE_COST_CENTER = source.ORACLE_COST_CENTER)
    WHEN MATCHED THEN 
    UPDATE SET destination.LEGACY_COST_CENTER = source.LEGACY_COST_CENTER,
@@ -1418,8 +1418,8 @@ costcenter_merge <- glue(
 
 # merge statement for reporting definition mapping table
 repdef_merge <- glue(
-  "MERGE INTO LPM_TEST_MAPPING_REPDEF destination
-   USING OAO_DEVELOPMENT.LPM_TEST_MAPPING_REPDEF source
+  "MERGE INTO LPM_MAPPING_REPDEF destination
+   USING OAO_DEVELOPMENT.LPM_MAPPING_REPDEF source
    ON (destination.DEFINITION_CODE = source.DEFINITION_CODE)
    WHEN MATCHED THEN 
    UPDATE SET destination.DEFINITION_NAME = source.DEFINITION_NAME,
@@ -1444,8 +1444,8 @@ repdef_merge <- glue(
 
 # merge statement for reporting definition mapping table
 keyvol_merge <- glue(
-  "MERGE INTO LPM_TEST_MAPPING_KEY_VOLUME destination
-   USING OAO_DEVELOPMENT.LPM_TEST_MAPPING_KEY_VOLUME source
+  "MERGE INTO LPM_MAPPING_KEY_VOLUME destination
+   USING OAO_DEVELOPMENT.LPM_MAPPING_KEY_VOLUME source
    ON (destination.DEFINITION_CODE = source.DEFINITION_CODE AND
        destination.KEY_VOLUME = source.KEY_VOLUME)
    WHEN MATCHED THEN 
