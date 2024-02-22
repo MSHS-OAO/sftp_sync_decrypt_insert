@@ -1326,8 +1326,8 @@ print("End Date check successful")
 jobcode_merge <- glue(
   "MERGE INTO LPM_MAPPING_JOBCODE destination
    USING OAO_DEVELOPMENT.LPM_MAPPING_JOBCODE source
-   ON (destination.PAYROLL = source.PAYROLL AND
-       destination.JOBCODE = source.JOBCODE )
+   ON (destination.JOBCODE = source.JOBCODE AND
+       destination.PAYROLL = source.PAYROLL)
    WHEN MATCHED THEN
    UPDATE SET destination.JOBCODE_DESCRIPTION = source.JOBCODE_DESCRIPTION,
               destination.PROVIDER = source.PROVIDER,
@@ -1388,10 +1388,12 @@ paycycle_merge <- glue(
               destination.PP_END_DATE = source.PP_END_DATE,
               destination.PREMIER_DISTRIBUTION = source.PREMIER_DISTRIBUTION
    WHEN NOT MATCHED THEN
-   INSERT (destination.PP_START_DATE,
+   INSERT (destination.PAYCYCLE_DATE,
+           destination.PP_START_DATE,
            destination.PP_END_DATE,
            destination.PREMIER_DISTRIBUTION)
-   VALUES (source.PP_START_DATE,
+   VALUES (source.PAYCYCLE_DATE,
+           source.PP_START_DATE,
            source.PP_END_DATE,
            source.PREMIER_DISTRIBUTION);"
 ) 
