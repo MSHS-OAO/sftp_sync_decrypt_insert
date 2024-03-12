@@ -1444,6 +1444,13 @@ repdef_merge <- glue(
            source.DEPARTMENT_BREAKDOWN);"
 )
 
+# delete any definiton codes that were removed or changed in OAO_DEV
+repdef_delete <- glue(
+  "DELETE FROM LPM_MAPPING_REPDEF
+   WHERE DEFINITION_CODE NOT IN 
+   (SELECT DEFINITION_CODE FROM OAO_DEVELOPMENT.LPM_MAPPING_REPDEF);"
+)
+
 # merge statement for reporting definition mapping table
 keyvol_merge <- glue(
   "MERGE INTO LPM_MAPPING_KEY_VOLUME destination
@@ -1476,6 +1483,8 @@ tryCatch({
   print("LPM_MAPPING_COST_CENTER has been merged")
   dbExecute(con_prod, repdef_merge)
   print("LPM_MAPPING_REPDEF has been merged")
+  dbExecute(con_prod, repdef_delete)
+  print("Old codes have been removed from LPM_MAPPING_REPDEF")
   dbExecute(con_prod, keyvol_merge)
   print("LPM_MAPPING_KEY_VOLUME has been merged")
   dbCommit(con_prod)
