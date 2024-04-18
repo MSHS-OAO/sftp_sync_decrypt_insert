@@ -1512,6 +1512,53 @@ tryCatch({
     print("Error")
     }
   )
+print("Mapping Table Merge Successful")
+```
+### Definition Code Quality Check
+```{r Definition Code Quality Chec , echo=FALSE}
+# connect to OAO_PRODUCTION
+con_prod <- dbConnect(odbc(), prod_dsn)
+
+# read in complete contents of all the DEFINITION_CODE mapping tables
+repdef <- tbl(con_prod, "LPM_MAPPING_REPDEF") %>%
+  mutate(REPDEF = "repdef") %>%
+  collect()
+costcenter <- tbl(con_prod, "LPM_MAPPING_COST_CENTER") %>%
+  mutate(COSTCENTER = "costcenter") %>%
+  collect()
+keyvol <- tbl(con_prod, "LPM_MAPPING_KEY_VOLUME") %>%
+  mutate(KEYVOL = "keyvol") %>%
+  collect()
+
+# get list of unique definition codes and whether they appear in each table
+definition_codes <- as.data.frame(c(repdef$DEFINITION_CODE,
+                                    costcenter$DEFINITION_CODE,
+                                    keyvol$DEFINITION_CODE)) %>%
+  setNames("DEFINITION_CODE") %>%
+  distinct() %>%
+  left_join(select(repdef, DEFINITION_CODE, REPDEF)%>%
+              distinct(),
+            by = c("DEFINITION_CODE" = "DEFINITION_CODE")) %>%
+  left_join(select(costcenter, DEFINITION_CODE, COSTCENTER)%>%
+              distinct(),
+            by = c("DEFINITION_CODE" = "DEFINITION_CODE")) %>%
+  left_join(select(keyvol, DEFINITION_CODE, KEYVOL) %>%
+              distinct(),
+            by = c("DEFINITION_CODE" = "DEFINITION_CODE")) %>%
+  filter(is.na(REPDEF) |
+         is.na(COSTCENTER) |
+         is.na(KEYVOL))
+
+# print results in table form for the user
+if(!is.null(definition_codes)) {
+  kable(definition_codes, 
+        caption = "The following definition codes are not present in all 3 mapping tables:") %>% 
+    kable_styling(latex_options = "striped", 
+                  font_size = 10) %>%
+    row_spec(0, font_size = 13)
+}
+
+print("Definition Code Quality Check Successful")
 ```
 
 ### Update MSHQ Data Tables
