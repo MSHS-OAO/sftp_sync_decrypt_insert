@@ -1521,13 +1521,13 @@ con_prod <- dbConnect(odbc(), prod_dsn)
 
 # read in complete contents of all the DEFINITION_CODE mapping tables
 repdef <- tbl(con_prod, "LPM_MAPPING_REPDEF") %>%
-  mutate(REPDEF = "repdef") %>%
+  mutate(REPDEF = "Included") %>%
   collect()
 costcenter <- tbl(con_prod, "LPM_MAPPING_COST_CENTER") %>%
-  mutate(COSTCENTER = "costcenter") %>%
+  mutate(COSTCENTER = "Included") %>%
   collect()
 keyvol <- tbl(con_prod, "LPM_MAPPING_KEY_VOLUME") %>%
-  mutate(KEYVOL = "keyvol") %>%
+  mutate(KEYVOL = "Included") %>%
   collect()
 
 # get list of unique definition codes and whether they appear in each table
@@ -1547,7 +1547,10 @@ definition_codes <- as.data.frame(c(repdef$DEFINITION_CODE,
             by = c("DEFINITION_CODE" = "DEFINITION_CODE")) %>%
   filter(is.na(REPDEF) |
          is.na(COSTCENTER) |
-         is.na(KEYVOL))
+         is.na(KEYVOL)) %>%
+  replace_na(list(REPDEF = "",
+                  COSTCENTER = "",
+                  KEYVOL = ""))
 
 # print results in table form for the user
 if(!is.null(definition_codes)) {
