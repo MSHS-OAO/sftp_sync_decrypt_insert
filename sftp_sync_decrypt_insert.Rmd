@@ -1536,7 +1536,7 @@ definition_codes <- as.data.frame(c(repdef$DEFINITION_CODE,
                                     keyvol$DEFINITION_CODE)) %>%
   setNames("DEFINITION_CODE") %>%
   distinct() %>%
-  left_join(select(repdef, DEFINITION_CODE, REPDEF)%>%
+  left_join(select(repdef, DEFINITION_CODE, DEFINITION_NAME, REPDEF)%>%
               distinct(),
             by = c("DEFINITION_CODE" = "DEFINITION_CODE")) %>%
   left_join(select(costcenter, DEFINITION_CODE, COSTCENTER)%>%
