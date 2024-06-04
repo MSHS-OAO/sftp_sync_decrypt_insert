@@ -1448,10 +1448,10 @@ repdef_merge <- glue(
 keyvol_merge <- glue(
   "MERGE INTO LPM_MAPPING_KEY_VOLUME destination
    USING OAO_DEVELOPMENT.LPM_MAPPING_KEY_VOLUME source
-   ON (destination.DEFINITION_CODE = source.DEFINITION_CODE)
+   ON (destination.DEFINITION_CODE = source.DEFINITION_CODE,
+       destination.KEY_VOLUME = source.KEY_VOLUME)
    WHEN MATCHED THEN 
-   UPDATE SET destination.CLOSED = source.CLOSED,
-              destination.KEY_VOLUME = source.KEY_VOLUME
+   UPDATE SET destination.CLOSED = source.CLOSED
    WHEN NOT MATCHED THEN
    INSERT (destination.DEFINITION_CODE,
            destination.KEY_VOLUME,
@@ -1476,8 +1476,8 @@ costcenter_delete <- glue(
 
 keyvol_delete <- glue(
   "DELETE FROM LPM_MAPPING_KEY_VOLUME
-   WHERE DEFINITION_CODE NOT IN 
-   (SELECT DEFINITION_CODE FROM OAO_DEVELOPMENT.LPM_MAPPING_KEY_VOLUME);"
+   WHERE DEFINITION_CODE || KEY_VOLUME NOT IN
+   (SELECT DEFINITION_CODE || KEY_VOLUME FROM OAO_DEVELOPMENT.LPM_MAPPING_KEY_VOLUME);"
 )
 
 # execute mapping table merge statements
