@@ -1448,10 +1448,10 @@ repdef_merge <- glue(
 keyvol_merge <- glue(
   "MERGE INTO LPM_MAPPING_KEY_VOLUME destination
    USING OAO_DEVELOPMENT.LPM_MAPPING_KEY_VOLUME source
-   ON (destination.DEFINITION_CODE = source.DEFINITION_CODE,
-       destination.KEY_VOLUME = source.KEY_VOLUME)
+   ON (destination.DEFINITION_CODE = source.DEFINITION_CODE)
    WHEN MATCHED THEN 
-   UPDATE SET destination.CLOSED = source.CLOSED
+   UPDATE SET destination.KEY_VOLUME = source.KEY_VOLUME, 
+              destination.CLOSED = source.CLOSED
    WHEN NOT MATCHED THEN
    INSERT (destination.DEFINITION_CODE,
            destination.KEY_VOLUME,
