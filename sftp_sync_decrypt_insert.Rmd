@@ -581,7 +581,7 @@ if (length(new_inserts) > 0) {
 # list files that need START_DATE and END_DATE values
 if (nrow(mshq_dates_new) > 0) {
   kable(mshq_dates_new, 
-        caption = "The following files need START_DATE and END_DATE values in table LPM_FILE_DATES_BISLR:") %>% 
+        caption = "The following files need START_DATE and END_DATE values in table LPM_FILE_DATES_MSHQ:") %>% 
     kable_styling(latex_options = "striped", 
                   font_size = 10) %>%
     row_spec(0, font_size = 13)
