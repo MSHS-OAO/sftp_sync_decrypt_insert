@@ -171,6 +171,17 @@ if (length(new_files) > 0) {
 } else {
   cat("Network drive is already up to date")
 }
+# remove files from dates file that have been removed from shared drive
+mshq_delete_files <- setdiff(basename(rownames(file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"), full.names = T)))),
+                             tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>% select(RAW_FILE) %>% collect() %>% pull())
+bislr_delete_files <- setdiff(basename(rownames(file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"), full.names = T)))),
+                             tbl(con_dev, "LPM_FILE_DATES_BISLR") %>% select(RAW_FILE) %>% collect() %>% pull())
+if(length(mshq_delete_files) > 0) {
+  file.remove(paste0(universal_dir, "Labor/Raw Data/MSHQ_sftp_sync/Raw/", mshq_delete_files))
+}
+if(length(mshq_delete_files) > 0) {
+  file.remove(paste0(universal_dir, "Labor/Raw Data/BISLR_sftp_sync/Raw/", bislr_delete_files))
+}
 
 # add any new files to the mshq dates files
 mshq_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"), 
