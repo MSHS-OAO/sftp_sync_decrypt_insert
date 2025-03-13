@@ -143,137 +143,145 @@ get_values_dates <- function(source_table, destination_schema, destination_table
 # set universal data directory
 universal_dir <- "/SharedDrive/deans/Presidents/SixSigma/MSHS Productivity/Productivity/Universal Data/"
 
-# establish connection to OAO oracle cloud db
-con_dev <- dbConnect(odbc(), dev_dsn)
-
-# get current MSHQ and BISLR file and date mapping file
-mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
-  collect()
-bislr_dates <- tbl(con_dev, "LPM_FILE_DATES_BISLR") %>%
-  collect()
-
-# get files currently in network directory
-mshq_raw_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"))
-bislr_raw_files <- list.files(paste0(universal_dir, "/Labor//Raw Data/BISLR_sftp_sync/Raw/"))
-
-# run lftp file to sync sftp to network drive
-system('lftp -f /data/SFTP/sync_to_network.lftp')
-
-# get new files in network drive
-mshq_raw_files_new <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"))
-bislr_raw_files_new <- list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"))
-
-#print new files that were copied over in sync
-new_files <- setdiff(c(mshq_raw_files_new, bislr_raw_files_new),
-                     c(mshq_raw_files, bislr_raw_files))
-if (length(new_files) > 0) {
-  cat(cat(paste0(new_files, "\n")), "have been added to the network drive", fill = TRUE)
+if (length(paste(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/")),
+                 list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/")))) != 0) {
+  # get files currently in network directory
+  mshq_raw_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"))
+  bislr_raw_files <- list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"))
+  
+  # establish connection to OAO oracle cloud db
+  con_dev <- dbConnect(odbc(), dev_dsn)
+  
+  # get current MSHQ and BISLR file and date mapping file
+  mshq_dates <- tbl(con_dev, "LPM_FILE_DATES_MSHQ") %>%
+    collect()
+  bislr_dates <- tbl(con_dev, "LPM_FILE_DATES_BISLR") %>%
+    collect()
+  
+  # run lftp file to sync sftp to network drive
+  system('lftp -f /data/SFTP/sync_to_network.lftp')
+  
+  # get new files in network drive
+  mshq_raw_files_new <- list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"))
+  bislr_raw_files_new <- list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"))
+  
+  #print new files that were copied over in sync
+  new_files <- setdiff(c(mshq_raw_files_new, bislr_raw_files_new),
+                       c(mshq_raw_files, bislr_raw_files))
+  if (length(new_files) > 0) {
+    cat(cat(paste0(new_files, "\n")), "have been added to the network drive", fill = TRUE)
+  } else {
+    cat("Network drive is already up to date")
+  }
+  
+  # add any new files to the mshq dates files
+  mshq_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"), 
+                                         full.names = T))
+  mshq_raw_files_info <- data.frame(RAW_FILE = basename(rownames(mshq_raw_files_info)),
+                                    RAW_MTIME = mshq_raw_files_info$mtime)
+  mshq_dates <- mshq_raw_files_info %>%
+    left_join(mshq_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
+    select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
+    arrange(RAW_MTIME) %>%
+    mutate(RAW_MTIME = as.character(RAW_MTIME))
+  
+  # add any new files to the bislr dates files
+  bislr_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"), 
+                                         full.names = T))
+  bislr_raw_files_info <- data.frame(RAW_FILE = basename(rownames(bislr_raw_files_info)),
+                                    RAW_MTIME = bislr_raw_files_info$mtime)
+  bislr_dates <- bislr_raw_files_info %>%
+    left_join(bislr_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
+    select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
+    arrange(RAW_MTIME) %>%
+    mutate(RAW_MTIME = as.character(RAW_MTIME))
+  
+  
+    # send new dates files to DB
+    dates_schema <- "OAO_DEVELOPMENT"
+    dates_table_mshq <- "LPM_FILE_DATES_MSHQ"
+    dates_table_bislr <- "LPM_FILE_DATES_BISLR"
+    
+    # truncate query
+    dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
+    dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
+    
+    #replace NA
+    mshq_dates <- mshq_dates %>%
+      mutate(across(everything(), as.character)) %>%
+      mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+             DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+             INSERT_FILE = replace_na(INSERT_FILE, ""),
+             RAW_MTIME = replace_na(RAW_MTIME, ""),
+             START_DATE = replace_na(START_DATE, ""),
+             END_DATE = replace_na(END_DATE, ""))
+  
+    bislr_dates <- bislr_dates %>%
+      mutate(across(everything(), as.character)) %>%
+      mutate(RAW_FILE = replace_na(RAW_FILE, ""),
+             DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
+             INSERT_FILE = replace_na(INSERT_FILE, ""),
+             RAW_MTIME = replace_na(RAW_MTIME, ""),
+             START_DATE = replace_na(START_DATE, ""),
+             END_DATE = replace_na(END_DATE, ""))
+    
+    # convert the each record/row of tibble to INTO clause of insert statment
+    inserts_dates_mshq <- 
+      lapply(
+        lapply(
+          lapply(split(mshq_dates, 
+                       1:nrow(mshq_dates)),
+                 as.list),
+          as.character),
+        FUN = get_values_dates, dates_schema, dates_table_mshq)
+    
+    inserts_dates_bislr <- 
+      lapply(
+        lapply(
+          lapply(split(bislr_dates, 
+                       1:nrow(bislr_dates)),
+                 as.list),
+          as.character),
+        FUN = get_values_dates, dates_schema, dates_table_bislr)
+    
+    # colapse list elements into indvidual insert statements
+    values_dates_mshq <- glue_collapse(inserts_dates_mshq, sep = "\n\n")
+    values_dates_bislr <- glue_collapse(inserts_dates_bislr, sep = "\n\n")
+    
+    # combine all insert statements into an insert all statement
+    all_data_mshq_dates <- glue('INSERT ALL
+                          {values_dates_mshq}
+                        SELECT 1 from DUAL;')
+    all_data_bislr_dates <- glue('INSERT ALL
+                          {values_dates_bislr}
+                        SELECT 1 from DUAL;')
+    
+    # truncate destination tables before inserts
+    con_dev <- dbConnect(odbc(), dev_dsn)
+    dbBegin(con_dev)
+    tryCatch({
+      dbExecute(con_dev, dates_truncate_mshq)
+      dbExecute(con_dev, dates_truncate_bislr)
+      dbExecute(con_dev, all_data_mshq_dates)
+      dbExecute(con_dev, all_data_bislr_dates)
+      dbCommit(con_dev)
+      dbDisconnect(con_dev)
+      print("File Dates tables have been updated")
+    }, 
+    error = function(err){
+      dbRollback(con_dev)
+      dbDisconnect(con_dev)
+      print("Error")
+    }
+    )
+  
+  print("sftp_sync successful")
+    
 } else {
-  cat("Network drive is already up to date")
+  stop("Network drive is not mounted on server")
+  knitr::knit_exit()
 }
 
-# add any new files to the mshq dates files
-mshq_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/MSHQ_sftp_sync/Raw/"), 
-                                       full.names = T))
-mshq_raw_files_info <- data.frame(RAW_FILE = basename(rownames(mshq_raw_files_info)),
-                                  RAW_MTIME = mshq_raw_files_info$mtime)
-mshq_dates <- mshq_raw_files_info %>%
-  left_join(mshq_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
-  select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
-  arrange(RAW_MTIME) %>%
-  mutate(RAW_MTIME = as.character(RAW_MTIME))
-
-# add any new files to the bislr dates files
-bislr_raw_files_info <- file.info(list.files(paste0(universal_dir, "/Labor/Raw Data/BISLR_sftp_sync/Raw/"), 
-                                       full.names = T))
-bislr_raw_files_info <- data.frame(RAW_FILE = basename(rownames(bislr_raw_files_info)),
-                                  RAW_MTIME = bislr_raw_files_info$mtime)
-bislr_dates <- bislr_raw_files_info %>%
-  left_join(bislr_dates, by = join_by(RAW_FILE, RAW_MTIME)) %>%
-  select(RAW_FILE, DECRYPT_FILE, INSERT_FILE, RAW_MTIME, START_DATE, END_DATE) %>%
-  arrange(RAW_MTIME) %>%
-  mutate(RAW_MTIME = as.character(RAW_MTIME))
-
-
-  # send new dates files to DB
-  dates_schema <- "OAO_DEVELOPMENT"
-  dates_table_mshq <- "LPM_FILE_DATES_MSHQ"
-  dates_table_bislr <- "LPM_FILE_DATES_BISLR"
-  
-  # truncate query
-  dates_truncate_mshq <- glue("TRUNCATE TABLE LPM_FILE_DATES_MSHQ")
-  dates_truncate_bislr <- glue("TRUNCATE TABLE LPM_FILE_DATES_BISLR")
-  
-  #replace NA
-  mshq_dates <- mshq_dates %>%
-    mutate(across(everything(), as.character)) %>%
-    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
-           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
-           INSERT_FILE = replace_na(INSERT_FILE, ""),
-           RAW_MTIME = replace_na(RAW_MTIME, ""),
-           START_DATE = replace_na(START_DATE, ""),
-           END_DATE = replace_na(END_DATE, ""))
-
-  bislr_dates <- bislr_dates %>%
-    mutate(across(everything(), as.character)) %>%
-    mutate(RAW_FILE = replace_na(RAW_FILE, ""),
-           DECRYPT_FILE = replace_na(DECRYPT_FILE, ""),
-           INSERT_FILE = replace_na(INSERT_FILE, ""),
-           RAW_MTIME = replace_na(RAW_MTIME, ""),
-           START_DATE = replace_na(START_DATE, ""),
-           END_DATE = replace_na(END_DATE, ""))
-  
-  # convert the each record/row of tibble to INTO clause of insert statment
-  inserts_dates_mshq <- 
-    lapply(
-      lapply(
-        lapply(split(mshq_dates, 
-                     1:nrow(mshq_dates)),
-               as.list),
-        as.character),
-      FUN = get_values_dates, dates_schema, dates_table_mshq)
-  
-  inserts_dates_bislr <- 
-    lapply(
-      lapply(
-        lapply(split(bislr_dates, 
-                     1:nrow(bislr_dates)),
-               as.list),
-        as.character),
-      FUN = get_values_dates, dates_schema, dates_table_bislr)
-  
-  # colapse list elements into indvidual insert statements
-  values_dates_mshq <- glue_collapse(inserts_dates_mshq, sep = "\n\n")
-  values_dates_bislr <- glue_collapse(inserts_dates_bislr, sep = "\n\n")
-  
-  # combine all insert statements into an insert all statement
-  all_data_mshq_dates <- glue('INSERT ALL
-                        {values_dates_mshq}
-                      SELECT 1 from DUAL;')
-  all_data_bislr_dates <- glue('INSERT ALL
-                        {values_dates_bislr}
-                      SELECT 1 from DUAL;')
-  
-  # truncate destination tables before inserts
-  con_dev <- dbConnect(odbc(), dev_dsn)
-  dbBegin(con_dev)
-  tryCatch({
-    dbExecute(con_dev, dates_truncate_mshq)
-    dbExecute(con_dev, dates_truncate_bislr)
-    dbExecute(con_dev, all_data_mshq_dates)
-    dbExecute(con_dev, all_data_bislr_dates)
-    dbCommit(con_dev)
-    dbDisconnect(con_dev)
-    print("File Dates tables have been updated")
-  }, 
-  error = function(err){
-    dbRollback(con_dev)
-    dbDisconnect(con_dev)
-    print("Error")
-  }
-  )
-
-print("sftp_sync successful")
 ```
 
 # Decryption
